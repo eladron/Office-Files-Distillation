@@ -11,7 +11,9 @@ class Distilator
 {
     private:
         xml_document<> doc;
-        xml_node<>* root;
+        xml_node<>* doc_root;
+        xml_document<> rels;
+        xml_node<>* rels_root;
         string file_name;
         map<int, int> level_counters;
         int list_level;
@@ -23,7 +25,10 @@ class Distilator
         void handle_paragraph_properties(xml_node<>* paragraph_node);
         void handle_list(xml_node<>* pPr_node);
         void handle_levels(int level);
+        void handle_run_node(xml_node<>* run_node);
+        void handle_hyperlink_node(xml_node<>* hyperlink_node);
         void print_levels_counters();
+        xml_node<>* get_relation_node(string relation);
 
     public:
         Distilator(char* file_name);

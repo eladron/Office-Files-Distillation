@@ -11,4 +11,6 @@
 #define LEVEL "w:ilvl"
 #define LIST_PARAGRAPH "ListParagraph"
 #define NOT_IN_LIST -1
+#define HYPERLINK "w:hyperlink"
+
 #endif

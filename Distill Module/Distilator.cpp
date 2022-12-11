@@ -212,5 +212,6 @@ Distilator::~Distilator()
     std::string name = this->file_name.substr(0, this->file_name.length()-5);
     std::ofstream out(name + ".txt");
     out<<this->file_text;
+    system(("cp -r " + name + "/word/media ./" + name + "_media").c_str());
     system(("rm -r " + name).c_str());
 }

@@ -22,6 +22,7 @@ class Distilator
         string unzip_file();
         void extract_text();
         void handle_text(xml_node<>* text_node);
+        void handle_drawing(xml_node<>* drawing_node);
         void handle_paragraph_properties(xml_node<>* paragraph_node);
         void handle_list(xml_node<>* pPr_node);
         void handle_levels(int level);

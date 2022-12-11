@@ -128,28 +128,60 @@ void Distilator::handle_paragraph_properties(xml_node<>* paragraph_node)
 
 void Distilator::handle_text(xml_node<>* text_node)
 {
+    string node_string = string(text_node->value());
+    if (this->list_level != NOT_IN_LIST)
     {
-        string node_string = string(text_node->value());
-        if (this->list_level != NOT_IN_LIST)
-        {
-            auto level = this->level_counters.find(this->list_level);
-            string tabs(level->first,'\t');
-            this->file_text.append(tabs);
-            this->file_text.append(to_string(level->second++) + " ");
-            this->list_level = NOT_IN_LIST;
+        auto level = this->level_counters.find(this->list_level);
+        string tabs(level->first,'\t');
+        this->file_text.append(tabs);
+        this->file_text.append(to_string(level->second++) + " ");
+        this->list_level = NOT_IN_LIST;
 
+    }
+    if (node_string.empty())
+        this->file_text.append(" ");
+    else
+        this->file_text.append(node_string);
+}
+
+void Distilator::handle_drawing(xml_node<>* drawing_node)
+{
+    xml_node<>* node = drawing_node;
+    for(const auto & name : IMAGE_PATH)
+    {
+        node = node->first_node(name);
+        if(!node)
+        {
+            std::cout << "very bad!!!\n";
+            exit(1);
         }
-        if (node_string.empty())
-            this->file_text.append(" ");
-        else
-            this->file_text.append(node_string);
-        }
+    }
+    xml_attribute<>* att = node->first_attribute(EMBED);
+    if(!att)
+    {
+        std::cout << "very bad!!!\n";
+        exit(1);
+    }
+    std::string rid= att->value();
+    auto relation_node = this->get_relation_node(rid);
+    if (relation_node)
+    {
+        this->file_text.append(std::string("### ") + relation_node->first_attribute("Target")->value() + " ###");
+    }
+    else
+    {
+        std::cout << "very bad!!!\n";
+        exit(1);
+    }
 }
 
 void Distilator::handle_run_node(xml_node<>* run_node)
 {
-    for (xml_node<>* text_node = run_node->first_node(TEXT); text_node; text_node = text_node->next_sibling(TEXT))
-        handle_text(text_node);
+    for (xml_node<>* node = run_node->first_node(); node; node = node->next_sibling())
+        if (strcmp(node->name(), TEXT) == 0)
+            handle_text(node);
+        else if (strcmp(node->name(), DRAWING) == 0)
+            handle_drawing(node);
 }
 
 void Distilator::extract_text()

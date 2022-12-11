@@ -17,7 +17,7 @@ main: distill.o Distilator.o
 distill.o: distill.cpp Distilator.hpp
 	$(CC) $(CFLAGS) -c distill.cpp
  
-Distilator.o: Distilator.hpp
+Distilator.o: Distilator.hpp Tags.h
 
 clean:
 	rm distill *.o

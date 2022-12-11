@@ -12,6 +12,9 @@
 #define LIST_PARAGRAPH "ListParagraph"
 #define NOT_IN_LIST -1
 #define HYPERLINK "w:hyperlink"
+#define TABLE "w:tbl"
+#define TABLE_ROW "w:tr"
+#define TABLE_COLUMN "w:tc"
 
 #define DRAWING "w:drawing"
 #define INLINE "wp:inline"

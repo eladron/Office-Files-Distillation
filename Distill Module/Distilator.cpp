@@ -1,11 +1,11 @@
-#include "distilator.hpp"
+#include "Distilator.hpp"
 #include <string>
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cstring>
-#include "tags.h"
+#include "Tags.h"
 
 using namespace rapidxml;
 using namespace std;
@@ -22,21 +22,38 @@ Distilator::Distilator(char* file_name)
 {
     this->file_name = string(file_name);
     string output_dir = unzip_file();
-    fstream myfile("./" + output_dir + "/word/document.xml");
-    vector<char> buffer((istreambuf_iterator<char>(myfile)), istreambuf_iterator<char>( ));
+    fstream doc_file("./" + output_dir + "/word/document.xml");
+    vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
     buffer.push_back('\0');
     this->doc.parse<0>(&buffer[0]); 
-    this->root = this->doc.first_node();
+    this->doc_root = this->doc.first_node();
+
+    fstream rels_file("./" + output_dir + "/word/_rels/document.xml.rels");
+    vector<char> rels_buffer((istreambuf_iterator<char>(rels_file)), istreambuf_iterator<char>( ));
+    rels_buffer.push_back('\0');
+    this->rels.parse<0>(&rels_buffer[0]); 
+    this->rels_root = this->rels.first_node();
+
     this->level_counters[0] = 1;
     this->list_level = NOT_IN_LIST;
+    
+}
+
+xml_node<>* Distilator::get_relation_node(string relation)
+{
+    for (auto rel = this->rels_root->first_node(); rel; rel=rel->next_sibling())
+    {
+        xml_attribute<>* id = rel->first_attribute("Id");
+        if (id && relation.compare(id->value()) == 0)
+            return rel;
+    }
+    return nullptr;
 }
 
 void Distilator::print_levels_counters()
 {
     for(auto iter = this->level_counters.begin(); iter != this->level_counters.end(); ++iter)
-    {
         cout<< "level = " << iter->first << ", counter = " << iter->second << endl;
-    }
 
 }
 
@@ -46,23 +63,16 @@ void Distilator::handle_levels(int level)
     for(auto iter = this->level_counters.begin(); iter != this->level_counters.end(); ++iter)
     {
         if (iter->first > level)
-        {
             iter->second = 1;
-        }
     }
     if (this->level_counters.find(level) == this->level_counters.end())
-    {
-        cout<<"im max level"<<endl;
         this->level_counters[level] = 1;
-    }
 }
 
 void printing_childs(xml_node<>* node)
 {
     for (xml_node<>* child = node->first_node(); child; child = child->next_sibling())
-    {
         cout<< child->name() << endl;
-    }
 }
 
 void Distilator::handle_list(xml_node<>* pPr_node)
@@ -90,6 +100,19 @@ void Distilator::handle_list(xml_node<>* pPr_node)
     }
 }
 
+void Distilator::handle_hyperlink_node(xml_node<>* hyperlink_node)
+{
+    auto id = hyperlink_node->first_attribute("r:id");
+    if (id)
+    {
+        auto relation_node = this->get_relation_node(id->value());
+        if (relation_node)
+        {
+            this->file_text.append(relation_node->first_attribute("Target")->value());
+        }
+    }
+}
+
 
 void Distilator::handle_paragraph_properties(xml_node<>* paragraph_node)
 {
@@ -99,55 +122,154 @@ void Distilator::handle_paragraph_properties(xml_node<>* paragraph_node)
     {
         xml_attribute<>* att = pStyle_node->first_attribute(VALUE);
         if (att != 0 && strcmp(att->value(), LIST_PARAGRAPH) == 0)
-        {
             this->handle_list(pPr_node);
-        }
     }
 }
 
 void Distilator::handle_text(xml_node<>* text_node)
 {
+    string node_string = string(text_node->value());
+    if (this->list_level != NOT_IN_LIST)
     {
-        string node_string = string(text_node->value());
-        if (this->list_level != NOT_IN_LIST)
-        {
-            auto level = this->level_counters.find(this->list_level);
-            string tabs(level->first,'\t');
-            this->file_text.append(tabs);
-            this->file_text.append(to_string(level->second++) + " ");
-            this->list_level = NOT_IN_LIST;
+        auto level = this->level_counters.find(this->list_level);
+        string tabs(level->first,'\t');
+        this->file_text.append(tabs);
+        this->file_text.append(to_string(level->second++) + " ");
+        this->list_level = NOT_IN_LIST;
 
+    }
+    if (node_string.empty())
+        this->file_text.append(" ");
+    else
+        this->file_text.append(node_string);
+}
+
+void Distilator::handle_drawing(xml_node<>* drawing_node)
+{
+    xml_node<>* node = drawing_node;
+    for(const auto & name : IMAGE_PATH)
+    {
+        node = node->first_node(name);
+        if(!node)
+        {
+            std::cout << "very bad!!!\n";
+            exit(1);
         }
-        if (node_string.empty())
-            this->file_text.append(" ");
-        else
-            this->file_text.append(node_string);
+    }
+    xml_attribute<>* att = node->first_attribute(EMBED);
+    if(!att)
+    {
+        std::cout << "very bad!!!\n";
+        exit(1);
+    }
+    std::string rid= att->value();
+    auto relation_node = this->get_relation_node(rid);
+    if (relation_node)
+    {
+        this->file_text.append(std::string("### ") + relation_node->first_attribute("Target")->value() + " ###");
+    }
+    else
+    {
+        std::cout << "very bad!!!\n";
+        exit(1);
+    }
+}
+
+void Distilator::handle_run_node(xml_node<>* run_node)
+{
+    for (xml_node<>* node = run_node->first_node(); node; node = node->next_sibling())
+        if (strcmp(node->name(), TEXT) == 0)
+            handle_text(node);
+        else if (strcmp(node->name(), DRAWING) == 0)
+            handle_drawing(node);
+}
+
+// writes the paragraph to table_text
+void Distilator::handle_paragraph_in_table(xml_node<>* table_box_paragraph)
+{
+    // iterate over runs in paragraph
+    for (xml_node<>* table_box_run = table_box_paragraph->first_node(RUN); 
+    table_box_run; table_box_run = table_box_run->next_sibling(RUN))
+    {
+        // add text in run
+        this->table_text.append(table_box_run->first_node(TEXT)->value());
+    }
+ 
+}
+
+// writes the table to table_text in csv format
+void Distilator::handle_table(xml_node<>* table_node)
+{
+    // iterate over all rows in table
+    for (xml_node<>* table_row_node = table_node->first_node(TABLE_ROW); table_row_node; table_row_node = table_row_node->next_sibling(TABLE_ROW))
+    {
+        // iterate over all table columns in the row
+        for (xml_node<>* table_box = table_row_node->first_node(TABLE_COLUMN); 
+        table_box; table_box = table_box->next_sibling(TABLE_COLUMN))
+        {
+            // iterate over all paragraphs in the table cell
+            for (xml_node<>* table_box_paragraph = table_box->first_node(PARAGRAPH); 
+            table_box_paragraph; table_box_paragraph = table_box_paragraph->next_sibling(PARAGRAPH))
+            {
+                handle_paragraph_in_table(table_box_paragraph);
+            }
+            // add ',' if box is not the last in the row
+            if (table_box->next_sibling(TABLE_COLUMN))
+                this->table_text.append(",");
         }
+        this->table_text.append("\n"); 
+    }
 }
 
 void Distilator::extract_text()
 {
-    xml_node<> * body_node = root->first_node("w:body");
-    std::ofstream out(this->file_name.substr(0, this->file_name.length()-5) + ".txt");
+    xml_node<> * body_node = this->doc_root->first_node("w:body");
     for(xml_node<>* paragraph_node = body_node->first_node(PARAGRAPH); paragraph_node; paragraph_node=paragraph_node->next_sibling(PARAGRAPH))
     {
         this->handle_paragraph_properties(paragraph_node);
-        for (xml_node<>* run_node = paragraph_node->first_node(RUN); run_node; run_node = run_node->next_sibling(RUN))
-            for (xml_node<>* text_node = run_node->first_node(TEXT); text_node; text_node = text_node->next_sibling(TEXT))
-                handle_text(text_node);
+        for (xml_node<>* child = paragraph_node->first_node(); child; child = child->next_sibling())
+        {
+            if (strcmp(child->name(), RUN) == 0)
+                this->handle_run_node(child);
+            else if (strcmp(child->name(), HYPERLINK) == 0)
+                this->handle_hyperlink_node(child);
+        }
         this->file_text.append("\n");
     }
     this->file_text.pop_back();
 }
 
+void Distilator::extract_tables()
+{
+    xml_node<> * body_node = this->doc_root->first_node("w:body");
+    int i = 0;
+    // iterate over tables in document
+    for (xml_node<>* table_node = body_node->first_node(TABLE); table_node; table_node=table_node->next_sibling(TABLE), i++)
+    {
+        // create new 'csv' file for table, named - table1.csv, table2.csv,...
+        std::string file_name = "table"+std::to_string(i)+".csv";
+        std::ofstream* table_file = new std::ofstream(file_name);
+
+        // handle the table - writes to table_text
+        handle_table(table_node);
+
+        // write table_text to the file
+        (*table_file) << this->table_text;
+        table_file->close();
+        this->table_text = "";
+    }
+}
+
 void Distilator::distill()
 {
     extract_text();
+    extract_tables();
 }
 
 Distilator::~Distilator()
 {
-    std::ofstream out(this->file_name.substr(0, this->file_name.length()-5) + ".txt");
+    std::string name = this->file_name.substr(0, this->file_name.length()-5);
+    std::ofstream out(name + ".txt");
     out<<this->file_text;
-    system("rm -r tmp");
+    system(("rm -r " + name).c_str());
 }

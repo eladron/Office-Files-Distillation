@@ -1,1 +1,6 @@
 file_handler/build/
+Distill Module/distill
+Distill Module/*.o
+Distill Module/*.txt
+Distill Module/*.docx
+Distill Module/.vscode/settings.json

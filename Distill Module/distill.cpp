@@ -1,4 +1,4 @@
-#include "distilator.hpp"
+#include "Distilator.hpp"
 #include <iostream>
 
 using namespace std;

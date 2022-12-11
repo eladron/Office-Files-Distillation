@@ -155,7 +155,6 @@ void Distilator::handle_run_node(xml_node<>* run_node)
 void Distilator::extract_text()
 {
     xml_node<> * body_node = this->doc_root->first_node("w:body");
-    std::ofstream out(this->file_name.substr(0, this->file_name.length()-5) + ".txt");
     for(xml_node<>* paragraph_node = body_node->first_node(PARAGRAPH); paragraph_node; paragraph_node=paragraph_node->next_sibling(PARAGRAPH))
     {
         this->handle_paragraph_properties(paragraph_node);
@@ -178,7 +177,8 @@ void Distilator::distill()
 
 Distilator::~Distilator()
 {
-    std::ofstream out(this->file_name.substr(0, this->file_name.length()-5) + ".txt");
+    std::string name = this->file_name.substr(0, this->file_name.length()-5);
+    std::ofstream out(name + ".txt");
     out<<this->file_text;
-    system("rm -r tmp");
+    system(("rm -r " + name).c_str());
 }

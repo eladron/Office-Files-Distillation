@@ -1,4 +1,5 @@
 file_handler/build/
 Distill Module/distill
 Distill Module/*.o
-Distill Module/tmp.txt
+Distill Module/*.txt
+Distill Module/*.docx

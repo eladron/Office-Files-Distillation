@@ -1,11 +1,11 @@
-#include "distilator.hpp"
+#include "Distilator.hpp"
 #include <string>
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cstring>
-#include "tags.h"
+#include "Tags.h"
 
 using namespace rapidxml;
 using namespace std;
@@ -184,6 +184,43 @@ void Distilator::handle_run_node(xml_node<>* run_node)
             handle_drawing(node);
 }
 
+// writes the paragraph to table_text
+void Distilator::handle_paragraph_in_table(xml_node<>* table_box_paragraph)
+{
+    // iterate over runs in paragraph
+    for (xml_node<>* table_box_run = table_box_paragraph->first_node(RUN); 
+    table_box_run; table_box_run = table_box_run->next_sibling(RUN))
+    {
+        // add text in run
+        this->table_text.append(table_box_run->first_node(TEXT)->value());
+    }
+ 
+}
+
+// writes the table to table_text in csv format
+void Distilator::handle_table(xml_node<>* table_node)
+{
+    // iterate over all rows in table
+    for (xml_node<>* table_row_node = table_node->first_node(TABLE_ROW); table_row_node; table_row_node = table_row_node->next_sibling(TABLE_ROW))
+    {
+        // iterate over all table columns in the row
+        for (xml_node<>* table_box = table_row_node->first_node(TABLE_COLUMN); 
+        table_box; table_box = table_box->next_sibling(TABLE_COLUMN))
+        {
+            // iterate over all paragraphs in the table cell
+            for (xml_node<>* table_box_paragraph = table_box->first_node(PARAGRAPH); 
+            table_box_paragraph; table_box_paragraph = table_box_paragraph->next_sibling(PARAGRAPH))
+            {
+                handle_paragraph_in_table(table_box_paragraph);
+            }
+            // add ',' if box is not the last in the row
+            if (table_box->next_sibling(TABLE_COLUMN))
+                this->table_text.append(",");
+        }
+        this->table_text.append("\n"); 
+    }
+}
+
 void Distilator::extract_text()
 {
     xml_node<> * body_node = this->doc_root->first_node("w:body");
@@ -202,9 +239,31 @@ void Distilator::extract_text()
     this->file_text.pop_back();
 }
 
+void Distilator::extract_tables()
+{
+    xml_node<> * body_node = this->doc_root->first_node("w:body");
+    int i = 0;
+    // iterate over tables in document
+    for (xml_node<>* table_node = body_node->first_node(TABLE); table_node; table_node=table_node->next_sibling(TABLE), i++)
+    {
+        // create new 'csv' file for table, named - table1.csv, table2.csv,...
+        std::string file_name = "table"+std::to_string(i)+".csv";
+        std::ofstream* table_file = new std::ofstream(file_name);
+
+        // handle the table - writes to table_text
+        handle_table(table_node);
+
+        // write table_text to the file
+        (*table_file) << this->table_text;
+        table_file->close();
+        this->table_text = "";
+    }
+}
+
 void Distilator::distill()
 {
     extract_text();
+    extract_tables();
 }
 
 Distilator::~Distilator()

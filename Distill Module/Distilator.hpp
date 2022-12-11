@@ -18,9 +18,12 @@ class Distilator
         map<int, int> level_counters;
         int list_level;
         string file_text;
+        string table_text;
 
         string unzip_file();
         void extract_text();
+        void extract_tables();
+        void handle_table(xml_node<>* table_node);
         void handle_text(xml_node<>* text_node);
         void handle_drawing(xml_node<>* drawing_node);
         void handle_paragraph_properties(xml_node<>* paragraph_node);
@@ -28,6 +31,7 @@ class Distilator
         void handle_levels(int level);
         void handle_run_node(xml_node<>* run_node);
         void handle_hyperlink_node(xml_node<>* hyperlink_node);
+        void handle_paragraph_in_table(xml_node<>* table_box_paragraph);
         void print_levels_counters();
         xml_node<>* get_relation_node(string relation);
 

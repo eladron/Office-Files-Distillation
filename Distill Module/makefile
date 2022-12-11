@@ -18,4 +18,7 @@ distill.o: distill.cpp Distilator.hpp
 	$(CC) $(CFLAGS) -c distill.cpp
  
 Distilator.o: Distilator.hpp
+
+clean:
+	rm distill *.o
  

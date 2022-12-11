@@ -10,6 +10,21 @@
 using namespace rapidxml;
 using namespace std;
 
+void Distilator::zip_file()
+{
+    int start = this->path.find_last_of("/");
+    string tmp = this->path.substr(0, start);
+    start = tmp.find_last_of("/") == -1? 0 : tmp.find_last_of("/");
+    string zip_name = tmp.substr(start);
+    this->path.pop_back();
+    string command = "zip " + zip_name + " -rm -j " + this->path;
+    system(command.c_str());
+    command = "rm -r " + this->path;
+    system(command.c_str());
+    this->path.push_back('/');
+
+}
+
 string Distilator::unzip_file()
 {
     string output_dir = this->file_name.substr(0, this->file_name.length()-5); 
@@ -18,9 +33,15 @@ string Distilator::unzip_file()
     return output_dir;
 }
 
-Distilator::Distilator(char* file_name)
+Distilator::Distilator(char* file_name, char* path_to_zip)
 {
     this->file_name = string(file_name);
+    this->path = string(path_to_zip);
+    this->path = this->path.substr(0, this->path.find_last_of(".")) ;
+    string command = "mkdir " + this->path;
+    system(command.c_str());
+    this->path.append("/");
+
     string output_dir = unzip_file();
     fstream doc_file("./" + output_dir + "/word/document.xml");
     vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
@@ -117,6 +138,8 @@ void Distilator::handle_hyperlink_node(xml_node<>* hyperlink_node)
 void Distilator::handle_paragraph_properties(xml_node<>* paragraph_node)
 {
     xml_node<>* pPr_node = paragraph_node->first_node(PARAGRAPH_PROPERTY);
+    if (pPr_node == nullptr)
+        return;
     xml_node<>* pStyle_node = pPr_node->first_node(PARAGRAPH_STYLE);
     if (pStyle_node != 0)
     {
@@ -247,7 +270,8 @@ void Distilator::extract_tables()
     for (xml_node<>* table_node = body_node->first_node(TABLE); table_node; table_node=table_node->next_sibling(TABLE), i++)
     {
         // create new 'csv' file for table, named - table1.csv, table2.csv,...
-        std::string file_name = "table"+std::to_string(i)+".csv";
+        std::string file_name = this->path + "table"+std::to_string(i)+".csv";
+        cout<<file_name<<endl;
         std::ofstream* table_file = new std::ofstream(file_name);
 
         // handle the table - writes to table_text
@@ -268,9 +292,11 @@ void Distilator::distill()
 
 Distilator::~Distilator()
 {
-    std::string name = this->file_name.substr(0, this->file_name.length()-5);
+    string clean_file_name = this->file_name.substr(0, this->file_name.length()-5);
+    std::string name = this->path + clean_file_name;
     std::ofstream out(name + ".txt");
     out<<this->file_text;
-    system(("cp -r " + name + "/word/media ./" + name + "_media").c_str());
-    system(("rm -r " + name).c_str());
+    out.close();
+    this->zip_file();
+    system(("rm -r " + clean_file_name).c_str());
 }

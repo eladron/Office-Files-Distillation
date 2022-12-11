@@ -19,8 +19,10 @@ class Distilator
         int list_level;
         string file_text;
         string table_text;
+        string path;
 
         string unzip_file();
+        void zip_file();
         void extract_text();
         void extract_tables();
         void handle_table(xml_node<>* table_node);
@@ -36,7 +38,7 @@ class Distilator
         xml_node<>* get_relation_node(string relation);
 
     public:
-        Distilator(char* file_name);
+        Distilator(char* file_name, char* path_to_zip);
         ~Distilator();
         void distill();
 };

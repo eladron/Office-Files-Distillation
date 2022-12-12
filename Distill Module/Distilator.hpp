@@ -22,6 +22,7 @@ class Distilator
         string file_text;
         string table_text;
         string path;
+        string output_dir;
         RTFile* rtf;
 
 

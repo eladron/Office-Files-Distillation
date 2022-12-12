@@ -76,14 +76,14 @@ Distilator::Distilator(char* file_name, char* path_to_zip)
     system(command.c_str());
     this->path.append("/");
 
-    string output_dir = unzip_file();
-    fstream doc_file("./" + output_dir + "/word/document.xml");
+    this->output_dir = unzip_file();
+    fstream doc_file("./" + this->output_dir + "/word/document.xml");
     vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
     buffer.push_back('\0');
     this->doc.parse<0>(&buffer[0]); 
     this->doc_root = this->doc.first_node();
 
-    fstream rels_file("./" + output_dir + "/word/_rels/document.xml.rels");
+    fstream rels_file("./" + this->output_dir + "/word/_rels/document.xml.rels");
     vector<char> rels_buffer((istreambuf_iterator<char>(rels_file)), istreambuf_iterator<char>( ));
     rels_buffer.push_back('\0');
     this->rels.parse<0>(&rels_buffer[0]); 
@@ -224,7 +224,12 @@ void Distilator::handle_drawing(xml_node<>* drawing_node)
     auto relation_node = this->get_relation_node(rid);
     if (relation_node)
     {
-        this->file_text.append(std::string("### ") + relation_node->first_attribute("Target")->value() + " ###");
+        std::string img_name = relation_node->first_attribute("Target")->value();
+
+        string command = "cp " + this->output_dir + "/word/" + img_name + " " + this->path + img_name.substr(6);
+        system(command.c_str());
+
+        this->file_text.append(std::string("### ") + img_name.substr(6) + " ###");
     }
     else
     {
@@ -298,13 +303,13 @@ void Distilator::extract_table(xml_node<>* table_node, int num)
     
     // create new 'csv' file for table, named - table1.csv, table2.csv,...
     std::string file_name = this->path + "table"+std::to_string(num)+".csv";
-    std::ofstream* table_file = new std::ofstream(file_name);
+    std::ofstream table_file(file_name);
     // handle the table - writes to table_text
     handle_table(table_node);
 
     // write table_text to the file
-    (*table_file) << this->table_text;
-    table_file->close();
+    table_file << this->table_text;
+    table_file.close();
     this->table_text = "";
 }
 
@@ -337,5 +342,6 @@ Distilator::~Distilator()
     out<<this->file_text;
     out.close();
     this->zip_file();
-    system(("rm -r " + clean_file_name).c_str());
+    string command = "rm -r " + clean_file_name;
+    system(command.c_str());
 }

@@ -10,6 +10,36 @@
 using namespace rapidxml;
 using namespace std;
 
+
+/*
+    RTF operations
+
+*/
+
+void Distilator::build_fonttbl()
+{
+    string output_dir = this->file_name.substr(0, this->file_name.length()-5);
+    fstream font_file("./" + output_dir + "/word/fontTable.xml");
+    vector<char> buffer((istreambuf_iterator<char>(font_file)), istreambuf_iterator<char>( ));
+    buffer.push_back('\0');
+    xml_document<> font_table_doc;
+    font_table_doc.parse<0>(&buffer[0]); 
+    xml_node<>* font_root = font_table_doc.first_node();
+    for (auto font_node = font_root->first_node(); font_node; font_node=font_node->next_sibling())
+    {
+        xml_attribute<>* name = font_node->first_attribute(NAME);
+        if (name)
+        {
+            rtf->add_font(name->value());
+        }
+    }
+    font_file.close();
+}
+
+/* 
+    zip operations
+*/
+
 void Distilator::zip_file()
 {
     int start = this->path.find_last_of("/");
@@ -32,6 +62,10 @@ string Distilator::unzip_file()
     system(command.c_str());
     return output_dir;
 }
+
+/*
+    Distilator operations
+*/
 
 Distilator::Distilator(char* file_name, char* path_to_zip)
 {
@@ -57,6 +91,7 @@ Distilator::Distilator(char* file_name, char* path_to_zip)
 
     this->level_counters[0] = 1;
     this->list_level = NOT_IN_LIST;
+    this->rtf = new RTFile();
     
 }
 
@@ -244,50 +279,54 @@ void Distilator::handle_table(xml_node<>* table_node)
     }
 }
 
-void Distilator::extract_text()
+void Distilator::extract_paragraph(xml_node<>* paragraph_node)
 {
-    xml_node<> * body_node = this->doc_root->first_node("w:body");
-    for(xml_node<>* paragraph_node = body_node->first_node(PARAGRAPH); paragraph_node; paragraph_node=paragraph_node->next_sibling(PARAGRAPH))
+
+    this->handle_paragraph_properties(paragraph_node);
+    for (xml_node<>* child = paragraph_node->first_node(); child; child = child->next_sibling())
     {
-        this->handle_paragraph_properties(paragraph_node);
-        for (xml_node<>* child = paragraph_node->first_node(); child; child = child->next_sibling())
-        {
-            if (strcmp(child->name(), RUN) == 0)
-                this->handle_run_node(child);
-            else if (strcmp(child->name(), HYPERLINK) == 0)
-                this->handle_hyperlink_node(child);
-        }
-        this->file_text.append("\n");
+        if (strcmp(child->name(), RUN) == 0)
+            this->handle_run_node(child);
+        else if (strcmp(child->name(), HYPERLINK) == 0)
+            this->handle_hyperlink_node(child);
     }
-    this->file_text.pop_back();
+    this->file_text.append("\n");
 }
 
-void Distilator::extract_tables()
+void Distilator::extract_table(xml_node<>* table_node, int num)
+{
+    
+    // create new 'csv' file for table, named - table1.csv, table2.csv,...
+    std::string file_name = this->path + "table"+std::to_string(num)+".csv";
+    std::ofstream* table_file = new std::ofstream(file_name);
+    // handle the table - writes to table_text
+    handle_table(table_node);
+
+    // write table_text to the file
+    (*table_file) << this->table_text;
+    table_file->close();
+    this->table_text = "";
+}
+
+void Distilator::extract_features()
 {
     xml_node<> * body_node = this->doc_root->first_node("w:body");
-    int i = 0;
-    // iterate over tables in document
-    for (xml_node<>* table_node = body_node->first_node(TABLE); table_node; table_node=table_node->next_sibling(TABLE), i++)
+    int i=0;
+    for(xml_node<>* child = body_node->first_node(); child; child=child->next_sibling())
     {
-        // create new 'csv' file for table, named - table1.csv, table2.csv,...
-        std::string file_name = this->path + "table"+std::to_string(i)+".csv";
-        cout<<file_name<<endl;
-        std::ofstream* table_file = new std::ofstream(file_name);
-
-        // handle the table - writes to table_text
-        handle_table(table_node);
-
-        // write table_text to the file
-        (*table_file) << this->table_text;
-        table_file->close();
-        this->table_text = "";
+        if (strcmp(child->name(), PARAGRAPH) == 0)
+            this->extract_paragraph(child);
+        else if (strcmp(child->name(), TABLE) == 0)
+            this->extract_table(child, i++);
     }
+    this->file_text.pop_back();
+
 }
 
 void Distilator::distill()
 {
-    extract_text();
-    extract_tables();
+    build_fonttbl();
+    extract_features();
 }
 
 Distilator::~Distilator()

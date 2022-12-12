@@ -15,6 +15,7 @@
 #define TABLE "w:tbl"
 #define TABLE_ROW "w:tr"
 #define TABLE_COLUMN "w:tc"
+#define NAME "w:name"
 
 #define DRAWING "w:drawing"
 #define INLINE "wp:inline"

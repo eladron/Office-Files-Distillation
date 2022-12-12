@@ -11,6 +11,12 @@ using namespace rapidxml;
 using namespace std;
 
 
+void printing_childs(xml_node<>* node)
+{
+    for (xml_node<>* child = node->first_node(); child; child = child->next_sibling())
+        cout<< child->name() << endl;
+}
+
 /*
     RTF operations
 
@@ -20,10 +26,10 @@ void Distilator::build_fonttbl()
 {
     string output_dir = this->file_name.substr(0, this->file_name.length()-5);
     fstream font_file("./" + output_dir + "/word/fontTable.xml");
-    vector<char> buffer((istreambuf_iterator<char>(font_file)), istreambuf_iterator<char>( ));
-    buffer.push_back('\0');
+    vector<char> buffer_font((istreambuf_iterator<char>(font_file)), istreambuf_iterator<char>( ));
+    buffer_font.push_back('\0');
     xml_document<> font_table_doc;
-    font_table_doc.parse<0>(&buffer[0]); 
+    font_table_doc.parse<0>(&buffer_font[0]); 
     xml_node<>* font_root = font_table_doc.first_node();
     for (auto font_node = font_root->first_node(); font_node; font_node=font_node->next_sibling())
     {
@@ -75,23 +81,27 @@ Distilator::Distilator(char* file_name, char* path_to_zip)
     string command = "mkdir " + this->path;
     system(command.c_str());
     this->path.append("/");
-
+    
     this->output_dir = unzip_file();
+    this->rtf = new RTFile();
+    this->build_fonttbl();
+
     fstream doc_file("./" + this->output_dir + "/word/document.xml");
     vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
     buffer.push_back('\0');
     this->doc.parse<0>(&buffer[0]); 
     this->doc_root = this->doc.first_node();
+    doc_file.close();
 
     fstream rels_file("./" + this->output_dir + "/word/_rels/document.xml.rels");
     vector<char> rels_buffer((istreambuf_iterator<char>(rels_file)), istreambuf_iterator<char>( ));
     rels_buffer.push_back('\0');
     this->rels.parse<0>(&rels_buffer[0]); 
     this->rels_root = this->rels.first_node();
+    rels_file.close();
 
     this->level_counters[0] = 1;
     this->list_level = NOT_IN_LIST;
-    this->rtf = new RTFile();
     
 }
 
@@ -123,12 +133,6 @@ void Distilator::handle_levels(int level)
     }
     if (this->level_counters.find(level) == this->level_counters.end())
         this->level_counters[level] = 1;
-}
-
-void printing_childs(xml_node<>* node)
-{
-    for (xml_node<>* child = node->first_node(); child; child = child->next_sibling())
-        cout<< child->name() << endl;
 }
 
 void Distilator::handle_list(xml_node<>* pPr_node)
@@ -205,19 +209,23 @@ void Distilator::handle_text(xml_node<>* text_node)
 void Distilator::handle_drawing(xml_node<>* drawing_node)
 {
     xml_node<>* node = drawing_node;
+
+    node = drawing_node->first_node(INLINE);
+    node = (node) ? node : drawing_node->first_node(ANCHOR);
+
     for(const auto & name : IMAGE_PATH)
     {
         node = node->first_node(name);
         if(!node)
         {
-            std::cout << "very bad!!!\n";
+            std::cout << "very bad 1!!!\n";
             exit(1);
         }
     }
     xml_attribute<>* att = node->first_attribute(EMBED);
     if(!att)
     {
-        std::cout << "very bad!!!\n";
+        std::cout << "very bad 2!!!\n";
         exit(1);
     }
     std::string rid= att->value();
@@ -229,11 +237,11 @@ void Distilator::handle_drawing(xml_node<>* drawing_node)
         string command = "cp " + this->output_dir + "/word/" + img_name + " " + this->path + img_name.substr(6);
         system(command.c_str());
 
-        this->file_text.append(std::string("### ") + img_name.substr(6) + " ###");
+        this->file_text.append(std::string("### ") + img_name.substr(6) + " ###\n");
     }
     else
     {
-        std::cout << "very bad!!!\n";
+        std::cout << "very bad 3!!!\n";
         exit(1);
     }
 }
@@ -330,7 +338,6 @@ void Distilator::extract_features()
 
 void Distilator::distill()
 {
-    build_fonttbl();
     extract_features();
 }
 
@@ -344,4 +351,5 @@ Distilator::~Distilator()
     this->zip_file();
     string command = "rm -r " + clean_file_name;
     system(command.c_str());
+    delete this->rtf;
 }

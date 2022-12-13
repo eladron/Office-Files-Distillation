@@ -12,7 +12,7 @@ parser.add_argument("email_to", help="email to send to")
 parser.add_argument("file", help="file to send")
 args = parser.parse_args()
 
-f = open("../secrets.json")
+f = open("./secrets.json")
 data= json.load(f)
 f.close()
 email_from = data["mailer"]["email"]

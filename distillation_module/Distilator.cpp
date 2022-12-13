@@ -40,7 +40,7 @@ string get_clean_file_name(string file_name)
 void Distilator::build_fonttbl()
 {
     string output_dir = this->file_name.substr(0, this->file_name.length()-5);
-    fstream font_file("./" + output_dir + "/word/fontTable.xml");
+    fstream font_file(output_dir + "/word/fontTable.xml");
     vector<char> buffer_font((istreambuf_iterator<char>(font_file)), istreambuf_iterator<char>( ));
     buffer_font.push_back('\0');
     xml_document<> font_table_doc;
@@ -70,10 +70,8 @@ void Distilator::zip_file()
         file_name = file_name.substr(0, this->zip_path.size()-1);
     }
     string command = "zip " + file_name + " -rm -j " + this->zip_path;
-    cout<<command<<endl;
     system(command.c_str());
     command = "rm -r " + this->zip_path;
-    cout<<command<<endl;
     system(command.c_str());
     this->zip_path.push_back('/');
 
@@ -82,6 +80,7 @@ void Distilator::zip_file()
 void Distilator::unzip_file()
 {
     this->output_dir = this->file_name.substr(0, this->file_name.length()-5); 
+    cout<<this->output_dir<<endl;
     string command = "yes | unzip " + this->file_name + " -d " + this->output_dir;
     system(command.c_str());
 }
@@ -92,9 +91,12 @@ void Distilator::unzip_file()
 
 Distilator::Distilator(char* file_name, char* path_to_zip)
 {
+    cout<<file_name<<endl;
+    cout<<path_to_zip<<endl;
     this->file_name = string(file_name);
     this->zip_path = string(path_to_zip);
     this->zip_path = this->zip_path.substr(0, this->zip_path.find_last_of(".")) ;
+    cout<<"zip path = " << this->zip_path << endl;
     string command = "mkdir " + this->zip_path;
     cout<<command<<endl;
     system(command.c_str());
@@ -104,14 +106,14 @@ Distilator::Distilator(char* file_name, char* path_to_zip)
     this->rtf = new RTFile();
     this->build_fonttbl();
 
-    fstream doc_file("./" + this->output_dir + "/word/document.xml");
+    fstream doc_file(this->output_dir + "/word/document.xml");
     vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
     buffer.push_back('\0');
     this->doc.parse<0>(&buffer[0]); 
     this->doc_root = this->doc.first_node();
     doc_file.close();
 
-    fstream rels_file("./" + this->output_dir + "/word/_rels/document.xml.rels");
+    fstream rels_file(this->output_dir + "/word/_rels/document.xml.rels");
     vector<char> rels_buffer((istreambuf_iterator<char>(rels_file)), istreambuf_iterator<char>( ));
     rels_buffer.push_back('\0');
     this->rels.parse<0>(&rels_buffer[0]); 

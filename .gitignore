@@ -7,6 +7,7 @@ Distill Module/.vscode/settings.json
 Distill Module/*_media
 Distill Module/*.zip
 Distill Module/.vscode/launch.json
+document0.docx
 
 # dependencies
 web_app/node_modules

@@ -33,6 +33,7 @@ export const PageContent: React.FC<pageContentProps> = ({
         const data = new FormData();
         data.append('file', uploadedFile ? uploadedFile : "");
         data.append('email', email);
+        data.append('id', content);
         const response = await fetch('/api/upload', {
             method: 'POST',
             body: data
@@ -50,18 +51,9 @@ export const PageContent: React.FC<pageContentProps> = ({
                     <input className="email-input" type="email" onChange={handleEmailChange}
                         pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" />
                 </label>
-                <h2 className="form-title">Type:</h2>
-                <div className="custom-select" style={{ width: "200px" }}>
-                    <select>
-                        <option value="0">Request</option>
-                        <option value="1">Medical Report</option>
-                        <option value="2">Certificate</option>
-                        <option value="3">Other</option>
-                    </select>
-                </div>
-                <h2 className="form-title">Content:</h2>
+                <h2 className="form-title">ID:</h2>
                 <label>
-                    <input className="email-input" type="email" onChange={handleContentChange} />
+                    <input className="email-input" pattern="[0-9]{9}" maxLength={9} onChange={handleContentChange} required/>
                 </label>
                 <h2 className="form-title">File:</h2>
                 <label>

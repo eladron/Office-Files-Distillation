@@ -10,6 +10,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("email_to", help="email to send to")
 parser.add_argument("file", help="file to send")
+parser.add_argument("id_from", help="ID of the sender")
 args = parser.parse_args()
 
 f = open("./secrets.json")
@@ -17,6 +18,7 @@ data= json.load(f)
 f.close()
 email_from = data["mailer"]["email"]
 pswd = data["mailer"]["password"]
+id_from = args.id_from
 # Setup port number and server name
 
 smtp_port = 587                 # Standard secure SMTP port
@@ -28,7 +30,7 @@ email_list = [args.email_to]
 
 
 # name the email subject
-subject = "New distilled version of an Office file has been sent to you!!"
+subject = f"New file from {id_from}!!!"
 
 
 

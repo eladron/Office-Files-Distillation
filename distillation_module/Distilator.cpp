@@ -10,11 +10,26 @@
 using namespace rapidxml;
 using namespace std;
 
+/*
+    Auxilleris function
+*/
 
 void printing_childs(xml_node<>* node)
 {
     for (xml_node<>* child = node->first_node(); child; child = child->next_sibling())
         cout<< child->name() << endl;
+}
+
+string get_clean_file_name(string file_name)
+{
+    string clean = file_name.substr(0, file_name.length()-5);
+    int index = clean.find_last_of("/");
+    if (index != -1)
+    {
+        clean = clean.substr(index+1);
+    }
+    return clean;
+
 }
 
 /*
@@ -48,25 +63,27 @@ void Distilator::build_fonttbl()
 
 void Distilator::zip_file()
 {
-    int start = this->path.find_last_of("/");
-    string tmp = this->path.substr(0, start);
-    start = tmp.find_last_of("/") == -1? 0 : tmp.find_last_of("/");
-    string zip_name = tmp.substr(start);
-    this->path.pop_back();
-    string command = "zip " + zip_name + " -rm -j " + this->path;
+    string file_name = this->zip_path;
+    int last_index = this->zip_path.find_last_of("/");
+    if (last_index == this->zip_path.size()-1)
+    {
+        file_name = file_name.substr(0, this->zip_path.size()-1);
+    }
+    string command = "zip " + file_name + " -rm -j " + this->zip_path;
+    cout<<command<<endl;
     system(command.c_str());
-    command = "rm -r " + this->path;
+    command = "rm -r " + this->zip_path;
+    cout<<command<<endl;
     system(command.c_str());
-    this->path.push_back('/');
+    this->zip_path.push_back('/');
 
 }
 
-string Distilator::unzip_file()
+void Distilator::unzip_file()
 {
-    string output_dir = this->file_name.substr(0, this->file_name.length()-5); 
-    string command = "yes | unzip " + this->file_name + " -d " + output_dir;
+    this->output_dir = this->file_name.substr(0, this->file_name.length()-5); 
+    string command = "yes | unzip " + this->file_name + " -d " + this->output_dir;
     system(command.c_str());
-    return output_dir;
 }
 
 /*
@@ -76,13 +93,14 @@ string Distilator::unzip_file()
 Distilator::Distilator(char* file_name, char* path_to_zip)
 {
     this->file_name = string(file_name);
-    this->path = string(path_to_zip);
-    this->path = this->path.substr(0, this->path.find_last_of(".")) ;
-    string command = "mkdir " + this->path;
+    this->zip_path = string(path_to_zip);
+    this->zip_path = this->zip_path.substr(0, this->zip_path.find_last_of(".")) ;
+    string command = "mkdir " + this->zip_path;
+    cout<<command<<endl;
     system(command.c_str());
-    this->path.append("/");
+    this->zip_path.append("/");
     
-    this->output_dir = unzip_file();
+    unzip_file();
     this->rtf = new RTFile();
     this->build_fonttbl();
 
@@ -234,7 +252,7 @@ void Distilator::handle_drawing(xml_node<>* drawing_node)
     {
         std::string img_name = relation_node->first_attribute("Target")->value();
 
-        string command = "cp " + this->output_dir + "/word/" + img_name + " " + this->path + img_name.substr(6);
+        string command = "cp " + this->output_dir + "/word/" + img_name + " " + this->zip_path + img_name.substr(6);
         system(command.c_str());
 
         this->file_text.append(std::string("### ") + img_name.substr(6) + " ###\n");
@@ -310,7 +328,7 @@ void Distilator::extract_table(xml_node<>* table_node, int num)
 {
     
     // create new 'csv' file for table, named - table1.csv, table2.csv,...
-    std::string file_name = this->path + "table"+std::to_string(num)+".csv";
+    std::string file_name = this->zip_path + "table"+std::to_string(num)+".csv";
     std::ofstream table_file(file_name);
     // handle the table - writes to table_text
     handle_table(table_node);
@@ -343,13 +361,14 @@ void Distilator::distill()
 
 Distilator::~Distilator()
 {
-    string clean_file_name = this->file_name.substr(0, this->file_name.length()-5);
-    std::string name = this->path + clean_file_name;
+
+    string clean_file_name = get_clean_file_name(this->file_name);
+    std::string name = this->zip_path + clean_file_name;
     std::ofstream out(name + ".txt");
     out<<this->file_text;
     out.close();
     this->zip_file();
-    string command = "rm -r " + clean_file_name;
+    string command = "rm -r " + this->output_dir;
     system(command.c_str());
     delete this->rtf;
 }

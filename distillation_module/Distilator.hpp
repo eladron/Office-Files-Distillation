@@ -21,12 +21,12 @@ class Distilator
         int list_level;
         string file_text;
         string table_text;
-        string path;
+        string zip_path;
         string output_dir;
         RTFile* rtf;
 
 
-        string unzip_file();
+        void unzip_file();
         void zip_file();
         void extract_features();
         void extract_paragraph(xml_node<>* paragraph_node);

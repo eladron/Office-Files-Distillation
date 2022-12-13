@@ -15,15 +15,17 @@
 #define TABLE "w:tbl"
 #define TABLE_ROW "w:tr"
 #define TABLE_COLUMN "w:tc"
+#define NAME "w:name"
 
 #define DRAWING "w:drawing"
 #define INLINE "wp:inline"
+#define ANCHOR "wp:anchor"
 #define GRAPHIC "a:graphic"
 #define GRAPHIC_DATA "a:graphicData"
 #define PIC "pic:pic"
 #define PIC_FILL "pic:blipFill"
 #define BLIP "a:blip"
 #define EMBED "r:embed"
-#define IMAGE_PATH (std::vector<const char*>({INLINE, GRAPHIC, GRAPHIC_DATA, PIC, PIC_FILL, BLIP}))
+#define IMAGE_PATH (std::vector<const char*>({GRAPHIC, GRAPHIC_DATA, PIC, PIC_FILL, BLIP}))
 
 #endif

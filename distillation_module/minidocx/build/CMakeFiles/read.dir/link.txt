@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/read.dir/examples/read.cpp.o -o read  libminidocx.a 

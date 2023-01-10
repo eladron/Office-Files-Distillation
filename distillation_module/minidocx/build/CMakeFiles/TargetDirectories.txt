@@ -1,0 +1,17 @@
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/minidocx.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/basic.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/traverse.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/breaks.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/spacing_indent.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/paragraph.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/section.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/run.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/read.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/table.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/text_frame.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/list_install_components.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/install.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/install/local.dir
+/mnt/c/Users/elad.ron/Downloads/minidocx/build/CMakeFiles/install/strip.dir

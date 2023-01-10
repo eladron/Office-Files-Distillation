@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/basic.dir/examples/basic.cpp.o -o basic  libminidocx.a 

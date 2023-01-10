@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/table_advanced.dir/examples/table_advanced.cpp.o -o table_advanced  libminidocx.a 

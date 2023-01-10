@@ -14,7 +14,7 @@ using namespace std;
     Auxilleris function
 */
 
-void printing_childs(xml_node<>* node)
+void printing_children(xml_node<>* node)
 {
     for (xml_node<>* child = node->first_node(); child; child = child->next_sibling())
         cout<< child->name() << endl;
@@ -49,7 +49,6 @@ void Distilator::zip_file()
     command = "rm -r " + this->zip_path;
     system(command.c_str());
     this->zip_path.push_back('/');
-
 }
 
 void Distilator::unzip_file()
@@ -61,7 +60,7 @@ void Distilator::unzip_file()
 }
 
 /*
-    Distilator operations
+    Constructor and Destructor
 */
 
 Distilator::Distilator(char* file_name, char* path_to_zip)
@@ -78,24 +77,19 @@ Distilator::Distilator(char* file_name, char* path_to_zip)
     this->zip_path.append("/");
     
     unzip_file();
+}
 
-    fstream doc_file(this->output_dir + "/word/document.xml");
-    vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
-    buffer.push_back('\0');
-    this->doc.parse<0>(&buffer[0]); 
-    this->doc_root = this->doc.first_node();
-    doc_file.close();
+Distilator::~Distilator()
+{
 
-    fstream rels_file(this->output_dir + "/word/_rels/document.xml.rels");
-    vector<char> rels_buffer((istreambuf_iterator<char>(rels_file)), istreambuf_iterator<char>( ));
-    rels_buffer.push_back('\0');
-    this->rels.parse<0>(&rels_buffer[0]); 
-    this->rels_root = this->rels.first_node();
-    rels_file.close();
-
-    this->level_counters[0] = 1;
-    this->list_level = NOT_IN_LIST;
-    
+    string clean_file_name = get_clean_file_name(this->file_name);
+    std::string name = this->zip_path + clean_file_name;
+    std::ofstream out(name + ".txt");
+    out<<this->file_text;
+    out.close();
+    this->zip_file();
+    string command = "rm -r " + this->output_dir;
+    system(command.c_str());
 }
 
 xml_node<>* Distilator::get_relation_node(string relation)
@@ -222,7 +216,7 @@ void Distilator::handle_drawing(xml_node<>* drawing_node)
         exit(1);
     }
     std::string rid= att->value();
-    printing_childs(this->rels_root);
+    printing_children(this->rels_root);
     auto relation_node = this->get_relation_node(rid);
     if (relation_node)
     {
@@ -330,20 +324,28 @@ void Distilator::extract_features()
 
 }
 
-void Distilator::distill()
-{
-    extract_features();
-}
 
-Distilator::~Distilator()
-{
 
-    string clean_file_name = get_clean_file_name(this->file_name);
-    std::string name = this->zip_path + clean_file_name;
-    std::ofstream out(name + ".txt");
-    out<<this->file_text;
-    out.close();
-    this->zip_file();
-    string command = "rm -r " + this->output_dir;
-    system(command.c_str());
+/*
+    Docx Functions
+*/
+
+void Distilator::init_docx()
+{
+    fstream doc_file(this->output_dir + "/word/document.xml");
+    vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
+    buffer.push_back('\0');
+    this->doc.parse<0>(&buffer[0]); 
+    this->doc_root = this->doc.first_node();
+    doc_file.close();
+
+    fstream rels_file(this->output_dir + "/word/_rels/document.xml.rels");
+    vector<char> rels_buffer((istreambuf_iterator<char>(rels_file)), istreambuf_iterator<char>( ));
+    rels_buffer.push_back('\0');
+    this->rels.parse<0>(&rels_buffer[0]); 
+    this->rels_root = this->rels.first_node();
+    rels_file.close();
+
+    this->level_counters[0] = 1;
+    this->list_level = NOT_IN_LIST;
 }

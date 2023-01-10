@@ -43,8 +43,13 @@ class Distilator
 
     public:
         Distilator(char* file_name, char* path_to_zip);
+        void init_docx();
+        void init_pptx();
+        void init_xslx();
         ~Distilator();
-        void distill();
+        void distil_docx();
+        void distil_pptx();
+        void distil_xslx();
 };
 
 

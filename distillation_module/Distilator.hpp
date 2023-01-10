@@ -4,7 +4,6 @@
 #include "rapidxml.hpp"
 #include <string>
 #include <map>
-#include "RTF.hpp"
 
 using namespace rapidxml;
 using namespace std;
@@ -23,7 +22,6 @@ class Distilator
         string table_text;
         string zip_path;
         string output_dir;
-        RTFile* rtf;
 
 
         void unzip_file();
@@ -42,7 +40,6 @@ class Distilator
         void handle_paragraph_in_table(xml_node<>* table_box_paragraph);
         void print_levels_counters();
         xml_node<>* get_relation_node(string relation);
-        void build_fonttbl();
 
     public:
         Distilator(char* file_name, char* path_to_zip);

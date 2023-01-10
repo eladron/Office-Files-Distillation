@@ -32,31 +32,6 @@ string get_clean_file_name(string file_name)
 
 }
 
-/*
-    RTF operations
-
-*/
-
-void Distilator::build_fonttbl()
-{
-    string output_dir = this->file_name.substr(0, this->file_name.length()-5);
-    fstream font_file(output_dir + "/word/fontTable.xml");
-    vector<char> buffer_font((istreambuf_iterator<char>(font_file)), istreambuf_iterator<char>( ));
-    buffer_font.push_back('\0');
-    xml_document<> font_table_doc;
-    font_table_doc.parse<0>(&buffer_font[0]); 
-    xml_node<>* font_root = font_table_doc.first_node();
-    for (auto font_node = font_root->first_node(); font_node; font_node=font_node->next_sibling())
-    {
-        xml_attribute<>* name = font_node->first_attribute(NAME);
-        if (name)
-        {
-            rtf->add_font(name->value());
-        }
-    }
-    font_file.close();
-}
-
 /* 
     zip operations
 */
@@ -103,8 +78,6 @@ Distilator::Distilator(char* file_name, char* path_to_zip)
     this->zip_path.append("/");
     
     unzip_file();
-    this->rtf = new RTFile();
-    this->build_fonttbl();
 
     fstream doc_file(this->output_dir + "/word/document.xml");
     vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
@@ -249,6 +222,7 @@ void Distilator::handle_drawing(xml_node<>* drawing_node)
         exit(1);
     }
     std::string rid= att->value();
+    printing_childs(this->rels_root);
     auto relation_node = this->get_relation_node(rid);
     if (relation_node)
     {
@@ -372,5 +346,4 @@ Distilator::~Distilator()
     this->zip_file();
     string command = "rm -r " + this->output_dir;
     system(command.c_str());
-    delete this->rtf;
 }

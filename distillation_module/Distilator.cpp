@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <algorithm>
 #include "Tags.h"
 
 using namespace rapidxml;
@@ -20,22 +21,23 @@ void printing_children(xml_node<>* node)
         cout<< child->name() << endl;
 }
 
-string get_clean_file_name(string file_name)
+bool is_int(string s)
 {
-    string clean = file_name.substr(0, file_name.length()-5);
-    int index = clean.find_last_of("/");
-    if (index != -1)
-    {
-        clean = clean.substr(index+1);
+    try {
+        int a = stoi(s);
+        double d = stod(s);
+        return (double)a == d;
     }
-    return clean;
-
+    catch(...) {
+        return false;
+    }
 }
 
 /* 
     zip operations
 */
 
+/*
 void Distilator::zip_file()
 {
     string file_name = this->zip_path;
@@ -50,12 +52,12 @@ void Distilator::zip_file()
     system(command.c_str());
     this->zip_path.push_back('/');
 }
+*/
 
 void Distilator::unzip_file()
 {
-    this->output_dir = this->file_name.substr(0, this->file_name.length()-5); 
-    cout<<this->output_dir<<endl;
-    string command = "yes | unzip " + this->file_name + " -d " + this->output_dir;
+    this->original_folder = this->file_name.substr(0, this->file_name.length()-5); 
+    string command = "unzip -q " + this->file_name + " -d " + this->original_folder;
     system(command.c_str());
 }
 
@@ -63,32 +65,19 @@ void Distilator::unzip_file()
     Constructor and Destructor
 */
 
-Distilator::Distilator(char* file_name, char* path_to_zip)
+Distilator::Distilator(char* file_name, char* new_file)
 {
-    cout<<file_name<<endl;
-    cout<<path_to_zip<<endl;
     this->file_name = string(file_name);
-    this->zip_path = string(path_to_zip);
-    this->zip_path = this->zip_path.substr(0, this->zip_path.find_last_of(".")) ;
-    cout<<"zip path = " << this->zip_path << endl;
-    string command = "mkdir " + this->zip_path;
-    cout<<command<<endl;
-    system(command.c_str());
-    this->zip_path.append("/");
-    
+    this->new_file = string(new_file);
     unzip_file();
 }
 
 Distilator::~Distilator()
 {
 
-    string clean_file_name = get_clean_file_name(this->file_name);
-    std::string name = this->zip_path + clean_file_name;
-    std::ofstream out(name + ".txt");
-    out<<this->file_text;
-    out.close();
-    this->zip_file();
-    string command = "rm -r " + this->output_dir;
+    this->new_doc->Save();
+    delete(new_doc);
+    string command = "rm -r " + this->original_folder;
     system(command.c_str());
 }
 
@@ -147,7 +136,7 @@ void Distilator::handle_list(xml_node<>* pPr_node)
     }
 }
 
-void Distilator::handle_hyperlink_node(xml_node<>* hyperlink_node)
+void Distilator::handle_hyperlink(xml_node<>* hyperlink_node)
 {
     auto id = hyperlink_node->first_attribute("r:id");
     if (id)
@@ -155,17 +144,18 @@ void Distilator::handle_hyperlink_node(xml_node<>* hyperlink_node)
         auto relation_node = this->get_relation_node(id->value());
         if (relation_node)
         {
-            this->file_text.append(relation_node->first_attribute("Target")->value());
+            //this->file_text.append(relation_node->first_attribute("Target")->value());
         }
     }
 }
 
 
-void Distilator::handle_paragraph_properties(xml_node<>* paragraph_node)
+void Distilator::handle_paragraph_properties(xml_node<>* paragraph_node, Paragraph &p)
 {
     xml_node<>* pPr_node = paragraph_node->first_node(PARAGRAPH_PROPERTY);
     if (pPr_node == nullptr)
         return;
+    this->set_paragraph_allignment(pPr_node, p);
     xml_node<>* pStyle_node = pPr_node->first_node(PARAGRAPH_STYLE);
     if (pStyle_node != 0)
     {
@@ -175,22 +165,29 @@ void Distilator::handle_paragraph_properties(xml_node<>* paragraph_node)
     }
 }
 
-void Distilator::handle_text(xml_node<>* text_node)
+void Distilator::set_paragraph_allignment(xml_node<>* pPr_node, Paragraph &p)
 {
-    string node_string = string(text_node->value());
-    if (this->list_level != NOT_IN_LIST)
+    xml_node<>* jc_node = pPr_node->first_node(JUSTIFICATION);
+    if (jc_node != 0)
     {
-        auto level = this->level_counters.find(this->list_level);
-        string tabs(level->first,'\t');
-        this->file_text.append(tabs);
-        this->file_text.append(to_string(level->second++) + " ");
-        this->list_level = NOT_IN_LIST;
-
+        xml_attribute<>* att = jc_node->first_attribute(VALUE);
+        if (att != 0)
+        {
+            if (strcmp(att->value(), "start") == 0 || strcmp(att->value(), "left") == 0)
+                p.SetAlignment(Paragraph::Alignment::Left);
+            else if (strcmp(att->value(), "end") == 0 || strcmp(att->value(), "right") == 0)
+                p.SetAlignment(Paragraph::Alignment::Right);
+            else if (strcmp(att->value(), "center") == 0)
+                p.SetAlignment(Paragraph::Alignment::Centered);
+            else if (strcmp(att->value(), "both") == 0)
+                p.SetAlignment(Paragraph::Alignment::Justified);
+            else if (strcmp(att->value(), "distribute") == 0)
+                p.SetAlignment(Paragraph::Alignment::Distributed);
+            else {
+                cout << "Justification Error: File is Corrupted" << endl;
+            }
+        }
     }
-    if (node_string.empty())
-        this->file_text.append(" ");
-    else
-        this->file_text.append(node_string);
 }
 
 void Distilator::handle_drawing(xml_node<>* drawing_node)
@@ -220,12 +217,14 @@ void Distilator::handle_drawing(xml_node<>* drawing_node)
     auto relation_node = this->get_relation_node(rid);
     if (relation_node)
     {
+        /*
         std::string img_name = relation_node->first_attribute("Target")->value();
 
-        string command = "cp " + this->output_dir + "/word/" + img_name + " " + this->zip_path + img_name.substr(6);
+        string command = "cp " + this->original_folder + "/word/" + img_name + " " + this->zip_path + img_name.substr(6);
         system(command.c_str());
 
         this->file_text.append(std::string("### ") + img_name.substr(6) + " ###\n");
+        */
     }
     else
     {
@@ -234,13 +233,90 @@ void Distilator::handle_drawing(xml_node<>* drawing_node)
     }
 }
 
-void Distilator::handle_run_node(xml_node<>* run_node)
+
+void Distilator::handle_run(xml_node<>* run_node, Run &r)
 {
+    xml_node<>* rpr = run_node->first_node(RUN_PROPERTY);
+    if (rpr) {
+        this->handle_run_properties(rpr, r);
+    }
     for (xml_node<>* node = run_node->first_node(); node; node = node->next_sibling())
         if (strcmp(node->name(), TEXT) == 0)
-            handle_text(node);
+            r.AppendText(node->value());
         else if (strcmp(node->name(), DRAWING) == 0)
-            handle_drawing(node);
+            this->handle_drawing(node);
+}
+
+void Distilator::handle_run_properties(xml_node<>* rpr, Run &r)
+{
+    for(auto child = rpr->first_node(); child; child=child->next_sibling())
+    {
+        char* name = child->name();
+        if(strcmp(name, SIZE) == 0) {
+            this->set_size_run(child, r);
+        }
+        this->set_text_formmating(child, r);
+    }
+}
+
+//Sets the size of the run
+void Distilator::set_size_run(xml_node<>* sz, Run &r) {
+    auto val = sz->first_attribute(VALUE);
+    if (!val) {
+        cout<<"File is Corrupted!" << endl;
+        return;
+    }
+    string ssize = val->value();
+    if (!is_int(ssize)) {
+        cout<<"File is Corrupted!" << endl;
+        return;
+    }
+    int size = stoi(ssize);
+    if (size <= 0) {
+        cout<<"File is Corrupted!" << endl;
+        return;
+    }
+    r.SetFontSize((double)size/2.0);
+}
+
+//Sets the text formmating in run
+void Distilator::set_text_formmating(xml_node<>* text_style, Run &r)
+{
+    auto val = text_style->first_attribute(VALUE);
+    if (strcmp(text_style->name(), BOLD) == 0) {
+        if (val) {
+            if (strcmp(val->value(), "false") == 0) {
+                return;
+            }
+            if (strcmp(val->value(), "true") != 0) {
+                cout<<"File is Corrupted!" << endl;
+                return;
+            }
+        }
+        r.SetFontStyle(Run::Bold | r.GetFontStyle());
+        return;
+    }
+    if (strcmp(text_style->name(), ITALIC) == 0) {
+        if (val) {
+            if (strcmp(val->value(), "false") == 0) {
+                return;
+            }
+            if (strcmp(val->value(), "true") != 0) {
+                cout<<"File is Corrupted!" << endl;
+                return;
+            }
+        }
+        r.SetFontStyle(Run::Italic | r.GetFontStyle());
+        return;
+    }
+    if (strcmp(text_style->name(), UNDERLINE) == 0) {
+        if (val && find(UNDERLINE_VAL.begin(), UNDERLINE_VAL.end(), val->value()) == UNDERLINE_VAL.end()) {
+            cout<<"File is Corrupted!" << endl;
+            return;
+        }
+        r.SetFontStyle(Run::Underline | r.GetFontStyle(), val->value());
+        return;
+    }
 }
 
 // writes the paragraph to table_text
@@ -280,51 +356,33 @@ void Distilator::handle_table(xml_node<>* table_node)
     }
 }
 
-void Distilator::extract_paragraph(xml_node<>* paragraph_node)
+void Distilator::handle_paragraph(xml_node<>* paragraph_node, Paragraph &p)
 {
-
-    this->handle_paragraph_properties(paragraph_node);
+    this->handle_paragraph_properties(paragraph_node, p);
     for (xml_node<>* child = paragraph_node->first_node(); child; child = child->next_sibling())
     {
-        if (strcmp(child->name(), RUN) == 0)
-            this->handle_run_node(child);
+        if (strcmp(child->name(), RUN) == 0) {
+            auto r = p.AppendRun();
+            this->handle_run(child, r);
+        }
         else if (strcmp(child->name(), HYPERLINK) == 0)
-            this->handle_hyperlink_node(child);
+            this->handle_hyperlink(child);
     }
-    this->file_text.append("\n");
 }
 
 void Distilator::extract_table(xml_node<>* table_node, int num)
 {
     
     // create new 'csv' file for table, named - table1.csv, table2.csv,...
-    std::string file_name = this->zip_path + "table"+std::to_string(num)+".csv";
-    std::ofstream table_file(file_name);
+    //std::string file_name = this->zip_path + "table"+std::to_string(num)+".csv";
+    //std::ofstream table_file(file_name);
     // handle the table - writes to table_text
     handle_table(table_node);
 
     // write table_text to the file
-    table_file << this->table_text;
-    table_file.close();
-    this->table_text = "";
+    //table_file << this->table_text;
+    //table_file.close();
 }
-
-void Distilator::extract_features()
-{
-    xml_node<> * body_node = this->doc_root->first_node("w:body");
-    int i=0;
-    for(xml_node<>* child = body_node->first_node(); child; child=child->next_sibling())
-    {
-        if (strcmp(child->name(), PARAGRAPH) == 0)
-            this->extract_paragraph(child);
-        else if (strcmp(child->name(), TABLE) == 0)
-            this->extract_table(child, i++);
-    }
-    this->file_text.pop_back();
-
-}
-
-
 
 /*
     Docx Functions
@@ -332,20 +390,55 @@ void Distilator::extract_features()
 
 void Distilator::init_docx()
 {
-    fstream doc_file(this->output_dir + "/word/document.xml");
+    /*
+        Open document.xmnl
+    */
+
+    cout<<this->original_folder + "/word/document.xml" << endl;
+    fstream doc_file(this->original_folder + "/word/document.xml");
     vector<char> buffer((istreambuf_iterator<char>(doc_file)), istreambuf_iterator<char>( ));
     buffer.push_back('\0');
     this->doc.parse<0>(&buffer[0]); 
     this->doc_root = this->doc.first_node();
     doc_file.close();
 
-    fstream rels_file(this->output_dir + "/word/_rels/document.xml.rels");
+    cout<<"parsed document.xml"<<endl;
+
+    /*
+        Open relations
+    */
+    fstream rels_file(this->original_folder + "/word/_rels/document.xml.rels");
     vector<char> rels_buffer((istreambuf_iterator<char>(rels_file)), istreambuf_iterator<char>( ));
     rels_buffer.push_back('\0');
     this->rels.parse<0>(&rels_buffer[0]); 
     this->rels_root = this->rels.first_node();
     rels_file.close();
+    cout<<"parsed relations.xml"<<endl;
 
+    /*
+        New File Initialization
+    */
+    this->new_doc = new Document(this->new_file);
     this->level_counters[0] = 1;
     this->list_level = NOT_IN_LIST;
+    cout<< "Distilator Initialized\n";
+}
+
+void Distilator::distil_docx()
+{
+    xml_node<> * body_node = this->doc_root->first_node("w:body");
+    if (body_node == NULL) {
+        cout<<"File is Corrupted!" << endl;
+        return;
+    }
+    int i=0;
+    for(xml_node<>* child = body_node->first_node(); child; child=child->next_sibling())
+    {
+        if (strcmp(child->name(), PARAGRAPH) == 0) {
+            auto p = this->new_doc->AppendParagraph();
+            this->handle_paragraph(child, p);
+        }
+        else if (strcmp(child->name(), TABLE) == 0)
+            this->extract_table(child, i++);
+    }   
 }

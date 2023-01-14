@@ -20,6 +20,7 @@ int main(int argc , char** argv)
         d->init_docx();
         d->distil_docx();
     }
+    /*
     else if (type == types[1]) {
         d->init_pptx();
         d->distil_pptx();
@@ -33,6 +34,7 @@ int main(int argc , char** argv)
         cout << "Invalid file type" << endl;
         return 1;
     }
+    */
     delete d;
     return 0;
 }

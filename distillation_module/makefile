@@ -9,15 +9,21 @@ CFLAGS = -Wall -g
 # ****************************************************
 # Targets needed to bring the executable up to date
  
-main: distill.o Distilator.o RTF.o
-	$(CC) $(CFLAGS) -o distill distill.o Distilator.o RTF.o
+main: distill.o Distilator.o minidocx.o pugixml.o zip.o
+	$(CC) $(CFLAGS) -o distill distill.o Distilator.o pugixml.o minidocx.o zip.o
  
 # The main.o target can be written more simply
- 
-distill.o: distill.cpp Distilator.hpp
+distill.o: distill.cpp
 	$(CC) $(CFLAGS) -c distill.cpp
  
-Distilator.o: Distilator.hpp
+Distilator.o: Distilator.hpp Distilator.cpp
+	$(CC) $(CFLAGS) -c Distilator.cpp
 
-RTF.O: RTF.hpp
- 
+minidocx.o: minidocx.hpp minidocx.cpp
+	$(CC) $(CFLAGS) -c minidocx.cpp
+
+pugixml.o: pugixml.hpp pugixml.cpp
+	$(CC) $(CFLAGS) -c pugixml.cpp
+
+zip.o: zip.h zip.c
+	$(CC) $(CFLAGS) -c zip.c

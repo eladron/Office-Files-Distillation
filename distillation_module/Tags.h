@@ -29,6 +29,7 @@
 #define SIZE "w:sz"
 #define JUSTIFICATION "w:jc"
 #define BIDI "w:bidi"
+#define RSTYLE "w:rStyle"
 
 #define DRAWING "w:drawing"
 #define INLINE "wp:inline"
@@ -47,6 +48,11 @@
 #define VALUE "w:val"
 #define RELATION_ID "r:id"
 #define EMBED "r:embed"
+#define HISTORY "w:history"
+#define TARGET "Target"
+#define TYPE "Type"
+#define TARGET_MODE "TargetMode"
+
 
 #define UNDERLINE_VAL (std::vector<const char*>({"dash","dashDotDotHeavy","dashDotHeavy","dashedHeavy","dashLong","dashLongHeavy","dotDash","dotDotDash","dotted","dottedHeavy","double","none","single","thick","wave","wavyDouble","wavyHeavy","words"}))
 

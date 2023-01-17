@@ -136,17 +136,37 @@ void Distilator::handle_list(xml_node<>* pPr_node)
     }
 }
 
-void Distilator::handle_hyperlink(xml_node<>* hyperlink_node)
+void Distilator::handle_hyperlink(xml_node<>* hyperlink_node, Hyperlink &h)
 {
-    auto id = hyperlink_node->first_attribute("r:id");
-    if (id)
-    {
-        auto relation_node = this->get_relation_node(id->value());
-        if (relation_node)
-        {
-            //this->file_text.append(relation_node->first_attribute("Target")->value());
-        }
+    auto id = hyperlink_node->first_attribute(RELATION_ID);
+    auto history = hyperlink_node->first_attribute(HISTORY);
+    auto run_node = hyperlink_node->first_node(RUN);
+    if (!id || ! history || !run_node) {
+        cout<<"File is Corrupted" << endl;
+        h.Remove();
+        return;
     }
+    auto relation_node = this->get_relation_node(id->value());
+    if (!relation_node) {
+        cout<<"File is Corrupted" << endl;
+        h.Remove();
+        return;
+    }
+    auto target = relation_node->first_attribute(TARGET);
+    auto type = relation_node->first_attribute(TYPE);
+    auto target_mode = relation_node->first_attribute(TARGET_MODE);
+    auto id2 = relation_node->first_attribute("Id");
+    if (!target || !type || !target_mode || !id2 || strcmp(id->value(),id2->value()) != 0) {
+        cout<<"File is Corrupted" << endl;
+        h.Remove();
+        return;
+    }
+
+    this->new_doc->AddRelationship(target->value(), type->value(), id->value() ,target_mode->value());
+    h.setID(id->value());
+    h.setHistory(strcmp(history->value(), "1") == 0 || strcmp(history->value(), "true") == 0);
+    auto r = h.AppendRun();
+    this->handle_run(run_node, r);
 }
 
 
@@ -252,10 +272,13 @@ void Distilator::handle_run_properties(xml_node<>* rpr, Run &r)
     for(auto child = rpr->first_node(); child; child=child->next_sibling())
     {
         char* name = child->name();
-        if(strcmp(name, SIZE) == 0) {
+        if (strcmp(name, SIZE) == 0) {
             this->set_size_run(child, r);
         }
         this->set_text_formmating(child, r);
+        if (strcmp(name, RSTYLE) == 0){
+            this->set_run_style(child, r);
+        }
     }
 }
 
@@ -319,6 +342,17 @@ void Distilator::set_text_formmating(xml_node<>* text_style, Run &r)
     }
 }
 
+//Sets the run style
+void Distilator::set_run_style(xml_node<>* rStyle, Run &r)
+{
+    auto val = rStyle->first_attribute(VALUE);
+    if (!val) {
+        cout<<"File is Corrupted!" << endl;
+        return;
+    }
+    r.SetRunStyle(val->value());
+}
+
 // writes the paragraph to table_text
 void Distilator::handle_paragraph_in_table(xml_node<>* table_box_paragraph)
 {
@@ -365,8 +399,10 @@ void Distilator::handle_paragraph(xml_node<>* paragraph_node, Paragraph &p)
             auto r = p.AppendRun();
             this->handle_run(child, r);
         }
-        else if (strcmp(child->name(), HYPERLINK) == 0)
-            this->handle_hyperlink(child);
+        else if (strcmp(child->name(), HYPERLINK) == 0) {
+            auto h = p.AppendHyperlink();
+            this->handle_hyperlink(child, h);
+        }
     }
 }
 

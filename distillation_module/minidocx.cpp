@@ -13,6 +13,8 @@
 #define _RELS R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>)"
 #define DOCUMENT_XML R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:oel="http://schemas.microsoft.com/office/2019/extlst" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh wp14"><w:body><w:sectPr><w:pgSz w:w="11906" w:h="16838" /><w:pgMar w:top="1440" w:right="1800" w:bottom="1440" w:left="1800" w:header="851" w:footer="992" w:gutter="0" /><w:cols w:space="425" /><w:docGrid w:type="lines" w:linePitch="312" /></w:sectPr></w:body></w:document>)"
 #define CONTENT_TYPES_XML R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>)"
+#define _DOC_RELS R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">)"
+
 
 namespace docx
 {
@@ -119,6 +121,10 @@ namespace docx
     doc_.load_buffer(DOCUMENT_XML, std::strlen(DOCUMENT_XML), pugi::parse_declaration);
     w_body_ = doc_.child("w:document").child("w:body");
     w_sectPr_ = w_body_.child("w:sectPr");
+
+    doc_rels_.load_buffer(_DOC_RELS, std::strlen(_DOC_RELS), pugi::parse_declaration);
+    rels = doc_rels_.child("Relationships");
+
   }
 
   bool Document::Save()
@@ -126,6 +132,10 @@ namespace docx
     xml_string_writer writer;
     doc_.save(writer, "", pugi::format_raw);
     const char *buf = writer.result.c_str();
+
+    xml_string_writer rels_writer;
+    doc_rels_.save(rels_writer, "", pugi::format_raw);
+    const char *rels_buf = rels_writer.result.c_str();
 
     struct zip_t *zip = zip_open(path_.c_str(), ZIP_DEFAULT_COMPRESSION_LEVEL, 'w');
     if (zip == nullptr) {
@@ -139,6 +149,12 @@ namespace docx
     zip_entry_open(zip, "word/document.xml");
     zip_entry_write(zip, buf, std::strlen(buf));
     zip_entry_close(zip);
+
+    zip_entry_open(zip, "word/_rels/document.xml.rels");
+    std::cout<<std::strlen(rels_buf)<<std::endl;
+    zip_entry_write(zip, rels_buf, std::strlen(rels_buf));
+    zip_entry_close(zip);
+
 
     zip_entry_open(zip, "[Content_Types].xml");
     zip_entry_write(zip, CONTENT_TYPES_XML, std::strlen(CONTENT_TYPES_XML));
@@ -324,6 +340,20 @@ namespace docx
     return textFrame;
   }
 
+  void Document::AddRelationship(const std::string target, 
+                                 const std::string type, 
+                                 const std::string id,
+                                 const std::string targetMode)
+  {
+    auto rel = rels.append_child("Relationship");
+    rel.append_attribute("Id") = id.c_str();
+    rel.append_attribute("Type") = type.c_str();
+    rel.append_attribute("Target") = target.c_str();
+
+    if (targetMode != "")
+      rel.append_attribute("TargetMode") = targetMode.c_str();
+  }
+
 
   // class Paragraph
   Paragraph::Paragraph()
@@ -389,6 +419,12 @@ namespace docx
     auto w_br = w_r.append_child("w:br");
     w_br.append_attribute("w:type") = "page";
     return Run(w_p_, w_r, w_br);
+  }
+
+  Hyperlink Paragraph::AppendHyperlink()
+  {
+    auto w_hyperlink = w_p_.append_child("w:hyperlink");
+    return Hyperlink(w_p_, w_hyperlink);
   }
 
   void Paragraph::SetAlignment(const Alignment alignment)
@@ -1147,6 +1183,19 @@ namespace docx
     return w_rPr_.child("w:spacing").attribute("w:val").as_int();
   }
 
+  void Run::SetRunStyle(const std::string rstyle)
+  {
+    auto rStyle = w_rPr_.child("w:rStyle");
+    if (!rStyle) {
+      rStyle = w_rPr_.append_child("w:rStyle");
+    }
+    auto rStyleVal = rStyle.attribute("w:val");
+    if (!rStyleVal) {
+      rStyleVal = rStyle.append_attribute("w:val");
+    }
+    rStyleVal.set_value(rstyle.c_str());
+  }
+
   bool Run::IsPageBreak()
   {
     return w_r_.find_child_by_attribute("w:br", "w:type", "page");
@@ -1167,6 +1216,42 @@ namespace docx
   Run::operator bool()
   {
     return w_r_;
+  }
+
+  // class Hyperlink
+
+  Hyperlink::Hyperlink(pugi::xml_node w_p, pugi::xml_node w_hyperlink): w_p_(w_p), w_hyperlink_(w_hyperlink)
+  {}
+
+  void Hyperlink::setID(const std::string id)
+  {
+    auto rId = w_hyperlink_.attribute("r:id");
+    if (!rId) {
+      rId = w_hyperlink_.append_attribute("r:id");
+    }
+    rId.set_value(id.c_str());
+  }
+
+  void Hyperlink::setHistory(const bool history)
+  {
+    auto historyAttr = w_hyperlink_.attribute("w:history");
+    if (!historyAttr) {
+      historyAttr = w_hyperlink_.append_attribute("w:history");
+    }
+    std::string val = history ? "1" : "0";
+    historyAttr.set_value(val.c_str());
+  }
+
+  Run Hyperlink::AppendRun()
+  {
+    auto w_r = w_hyperlink_.append_child("w:r");
+    auto w_rPr = w_r.append_child("w:rPr");
+    return Run(w_p_, w_r, w_rPr);
+  }
+
+  void Hyperlink::Remove()
+  {
+    w_p_.remove_child(w_hyperlink_);
   }
 
   // class Table

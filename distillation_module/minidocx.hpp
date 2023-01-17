@@ -106,6 +106,7 @@ namespace docx
   class Table;
   class TableCell;
   class TextFrame;
+  class Hyperlink;
 
 
   class Box
@@ -263,6 +264,10 @@ namespace docx
     void SetCharacterSpacing(const int characterSpacing);
     int GetCharacterSpacing();
 
+    void SetRunStyle(const std::string runStyle);
+
+    
+
     // Run
     void Remove();
     bool IsPageBreak();
@@ -276,6 +281,24 @@ namespace docx
     pugi::xml_node w_r_;
     pugi::xml_node w_rPr_;
   }; // class Run
+
+  class Hyperlink
+  {
+    public:
+    Hyperlink(pugi::xml_node w_p, pugi::xml_node w_hyperlink);
+    Run AppendRun();
+
+    void setID(const std::string id);
+    void setHistory(const bool history);
+
+    void Remove();
+    
+
+    private:
+      pugi::xml_node w_p_;
+      pugi::xml_node w_hyperlink_;
+
+  }; // class Hyperlink
 
 
   class Section
@@ -365,6 +388,9 @@ namespace docx
                   const std::string fontAscii, 
                   const std::string fontEastAsia = "");
     Run AppendPageBreak();
+
+    //add hyperlink
+    Hyperlink AppendHyperlink();
 
     // paragraph formatting
     enum class Alignment { Left, Centered, Right, Justified, Distributed };
@@ -514,12 +540,21 @@ namespace docx
     // add text frame
     TextFrame AppendTextFrame(const int w, const int h);
 
+    // add Relationship to /word/_rels/document.xml.rels
+    void AddRelationship(const std::string target, 
+                         const std::string type, 
+                         const std::string id,
+                         const std::string targetMode = "");
+
   private:
     std::string        path_;
     pugi::xml_document doc_;
     pugi::xml_node     w_body_;
     pugi::xml_node     w_sectPr_;
-  }; // class Document
 
+
+    pugi::xml_document     doc_rels_;
+    pugi::xml_node   rels;
+  }; // class Document
 
 } // namespace docx

@@ -60,6 +60,7 @@ class Distilator
         void handle_run_properties(xml_node<>* rpr, Run &r);
         void set_size_run(xml_node<>* sz, Run &r);
         void set_text_formmating(xml_node<>* text_style, Run &r);
+        void set_run_style(xml_node<>* rStyle, Run &r);
     
 
         void extract_table(xml_node<>* table_node, int num);
@@ -68,7 +69,7 @@ class Distilator
         void handle_drawing(xml_node<>* drawing_node);
         void handle_list(xml_node<>* pPr_node);
         void handle_levels(int level);
-        void handle_hyperlink(xml_node<>* hyperlink_node);
+        void handle_hyperlink(xml_node<>* hyperlink_node, Hyperlink &h);
         void handle_paragraph_in_table(xml_node<>* table_box_paragraph);
         void print_levels_counters();
         xml_node<>* get_relation_node(string relation);

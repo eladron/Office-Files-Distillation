@@ -378,7 +378,8 @@ namespace docx
 
     // get run
     Run FirstRun();
-
+    //get math
+    void appendMath(pugi::xml_node& math_node);
     // add run
     Run AppendRun();
     Run AppendRun(const std::string text);
@@ -455,6 +456,12 @@ namespace docx
     pugi::xml_node w_pPr_;
   }; // class Paragraph
 
+class Math {
+ public:
+ Math(pugi::xml_node math_node);
+ private:
+  pugi::xml_node math_node;
+};
 
   class TextFrame: public Paragraph
   {

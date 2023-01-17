@@ -1030,7 +1030,11 @@ namespace docx
     return w_sectPr_ == s.w_sectPr_;
   }
 
-
+  //class math
+  void Paragraph::appendMath(pugi::xml_node& math_node){
+    std::cout << "math_node: " << math_node.child_value() << std::endl;
+    w_p_.append_copy(math_node);
+  }
   // class Run
   Run::Run(pugi::xml_node w_p, 
            pugi::xml_node w_r, 

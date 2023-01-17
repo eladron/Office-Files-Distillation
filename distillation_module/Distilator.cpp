@@ -424,6 +424,9 @@ void Distilator::handle_paragraph(xml_node paragraph_node, Paragraph &p)
             auto h = p.AppendHyperlink();
             this->handle_hyperlink(child, h);
         }
+        else if (strcmp(child.name(), MATH_PARAGRAPH) == 0){
+            p.appendMath(child);
+        }
     }
 }
 

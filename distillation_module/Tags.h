@@ -31,7 +31,7 @@
 #define BIDI "w:bidi"
 #define RSTYLE "w:rStyle"
 #define HIGHLIGHT "w:highlight"
-
+#define MATH_PARAGRAPH ("m:oMathPara")
 #define DRAWING "w:drawing"
 #define INLINE "wp:inline"
 #define ANCHOR "wp:anchor"

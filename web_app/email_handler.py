@@ -53,7 +53,7 @@ def send_emails(email_list):
 
         # Define the file to attach
         filename = args.file
-
+        stripped_filename = filename.split("/")[-1]
         # Open the file in python as a binary
         attachment= open(filename, 'rb')  # r for read and b for binary
 
@@ -61,7 +61,7 @@ def send_emails(email_list):
         attachment_package = MIMEBase('application', 'octet-stream')
         attachment_package.set_payload((attachment).read())
         encoders.encode_base64(attachment_package)
-        attachment_package.add_header('Content-Disposition', "attachment; filename= " + filename)
+        attachment_package.add_header('Content-Disposition', "attachment; filename= " + stripped_filename)
         msg.attach(attachment_package)
 
         # Cast as string

@@ -1198,6 +1198,19 @@ namespace docx
     rStyleVal.set_value(rstyle.c_str());
   }
 
+  void Run::SetHighlight(const std::string highlight)
+  {
+    auto highlightNode = w_rPr_.child("w:highlight");
+    if (!highlightNode) {
+      highlightNode = w_rPr_.append_child("w:highlight");
+    }
+    auto highlightVal = highlightNode.attribute("w:val");
+    if (!highlightVal) {
+      highlightVal = highlightNode.append_attribute("w:val");
+    }
+    highlightVal.set_value(highlight.c_str());
+  }
+
   bool Run::IsPageBreak()
   {
     return w_r_.find_child_by_attribute("w:br", "w:type", "page");

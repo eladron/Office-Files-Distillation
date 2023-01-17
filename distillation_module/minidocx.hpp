@@ -265,6 +265,7 @@ namespace docx
     int GetCharacterSpacing();
 
     void SetRunStyle(const std::string runStyle);
+    void SetHighlight(const std::string highlight);
 
     
 

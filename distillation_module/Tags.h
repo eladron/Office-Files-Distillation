@@ -30,6 +30,7 @@
 #define JUSTIFICATION "w:jc"
 #define BIDI "w:bidi"
 #define RSTYLE "w:rStyle"
+#define HIGHLIGHT "w:highlight"
 
 #define DRAWING "w:drawing"
 #define INLINE "wp:inline"
@@ -55,5 +56,5 @@
 
 
 #define UNDERLINE_VAL (std::vector<const char*>({"dash","dashDotDotHeavy","dashDotHeavy","dashedHeavy","dashLong","dashLongHeavy","dotDash","dotDotDash","dotted","dottedHeavy","double","none","single","thick","wave","wavyDouble","wavyHeavy","words"}))
-
+#define HIGHLIGHT_VAL (std::vector<const char*>({"black","blue","cyan","darkBlue","darkCyan","darkGray","darkGreen","darkMagenta","darkRed","darkYellow","darkYellow","gray","green","magenta","none","red","white","yellow"}))
 #endif

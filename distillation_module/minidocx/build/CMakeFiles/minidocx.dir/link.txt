@@ -1,2 +1,0 @@
-/usr/bin/ar qc libminidocx.a CMakeFiles/minidocx.dir/src/minidocx.cpp.o CMakeFiles/minidocx.dir/3rdparty/zip-0.2.1/src/zip.c.o CMakeFiles/minidocx.dir/3rdparty/pugixml-1.12.1/src/pugixml.cpp.o
-/usr/bin/ranlib libminidocx.a

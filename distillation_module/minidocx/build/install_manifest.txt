@@ -1,4 +1,0 @@
-/mnt/c/Users/elad.ron/Downloads/minidocx/install/lib/libminidocx.a
-/mnt/c/Users/elad.ron/Downloads/minidocx/install/include/minidocx.hpp
-/mnt/c/Users/elad.ron/Downloads/minidocx/install/include/pugixml.hpp
-/mnt/c/Users/elad.ron/Downloads/minidocx/install/include/pugiconfig.hpp

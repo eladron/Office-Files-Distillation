@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/spacing_indent.dir/examples/spacing_indent.cpp.o -o spacing_indent  libminidocx.a 

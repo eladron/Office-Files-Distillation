@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/breaks.dir/examples/breaks.cpp.o -o breaks  libminidocx.a 

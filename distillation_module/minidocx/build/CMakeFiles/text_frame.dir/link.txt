@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/text_frame.dir/examples/text_frame.cpp.o -o text_frame  libminidocx.a 

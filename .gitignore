@@ -1,12 +1,14 @@
 file_handler/build/
-Distill Module/distill
-Distill Module/*.o
-Distill Module/*.txt
-Distill Module/*.docx
-Distill Module/.vscode/settings.json
-Distill Module/*_media
-Distill Module/*.zip
-Distill Module/.vscode/launch.json
+distillation_module/distill
+distillation_module/*.o
+distillation_module/*.txt
+distillation_module/*.docx
+distillation_module/.vscode/settings.json
+distillation_module/*_media
+distillation_module/*.zip
+distillation_module/.vscode/launch.json
+distillation_module/test/*.docx
+distillation_module/output/*.docx
 document0.docx
 
 # dependencies

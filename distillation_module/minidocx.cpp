@@ -427,6 +427,8 @@ namespace docx
     return Hyperlink(w_p_, w_hyperlink);
   }
 
+  
+
   void Paragraph::SetAlignment(const Alignment alignment)
   {
     const char *val;

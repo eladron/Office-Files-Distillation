@@ -64,17 +64,16 @@ class Distilator
         void set_highlight(xml_node highlight, Run &r);
     
 
-        void extract_table(xml_node table_node, int num);
-        void handle_table(xml_node table_node);
+        void handle_table(xml_node table_node, Table &t);
         void handle_text(xml_node text_node);
         void handle_drawing(xml_node drawing_node);
         void handle_list(xml_node pPr_node);
         void handle_levels(int level);
         void handle_hyperlink(xml_node hyperlink_node, Hyperlink &h);
-        void handle_paragraph_in_table(xml_node table_box_paragraph);
+        void handle_paragraph_in_table(xml_node table_box_paragraph, Paragraph &p);
         void print_levels_counters();
         xml_node get_relation_node(string relation);
-
+        void get_dimensions_table(xml_node t, int *rows, int *cols);
     public:
         Distilator(char* file_name, char* path_to_zip);
         void init_docx();

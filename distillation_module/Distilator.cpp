@@ -387,41 +387,71 @@ void Distilator::set_highlight(xml_node highlight, Run &r)
 }
 
 // writes the paragraph to table_text
-void Distilator::handle_paragraph_in_table(xml_node table_box_paragraph)
+void Distilator::handle_paragraph_in_table(xml_node table_box_paragraph, Paragraph &p)
 {
     // iterate over runs in paragraph
     for (xml_node table_box_run = table_box_paragraph.child(RUN); 
     table_box_run; table_box_run = table_box_run.next_sibling(RUN))
     {
         // add text in run
-        this->table_text.append(table_box_run.child(TEXT).value());
+        // this->table_text.append(table_box_run.child(TEXT).value());
+        p.AppendRun(table_box_run.child(TEXT).child_value());
     }
  
 }
 
 // writes the table to table_text in csv format
-void Distilator::handle_table(xml_node table_node)
+void Distilator::handle_table(xml_node table_node, Table &t)
 {
+    Paragraph p;
+    int row=0,col=0;
     // iterate over all rows in table
-    for (xml_node table_row_node = table_node.child(TABLE_ROW); table_row_node; table_row_node = table_row_node.next_sibling(TABLE_ROW))
+    for (xml_node table_row_node = table_node.child(TABLE_ROW); table_row_node;
+     table_row_node = table_row_node.next_sibling(TABLE_ROW))
     {
         // iterate over all table columns in the row
         for (xml_node table_box = table_row_node.child(TABLE_COLUMN); 
         table_box; table_box = table_box.next_sibling(TABLE_COLUMN))
         {
+            p = t.GetCell(row, col).FirstParagraph();
             // iterate over all paragraphs in the table cell
             for (xml_node table_box_paragraph = table_box.child(PARAGRAPH); 
             table_box_paragraph; table_box_paragraph = table_box_paragraph.next_sibling(PARAGRAPH))
             {
-                handle_paragraph_in_table(table_box_paragraph);
+               // cout << "row,col:" << row << "," << col << endl;
+                handle_paragraph_in_table(table_box_paragraph,p);
             }
-            // add ',' if box is not the last in the row
-            if (table_box.next_sibling(TABLE_COLUMN))
-                this->table_text.append(",");
+            col++;
         }
-        this->table_text.append("\n"); 
+        row++;
+        col=0;
     }
 }
+
+// writes the number of rows and cols in table t to variables given
+void Distilator::get_dimensions_table(xml_node t, int *rows, int *cols)
+{
+    int num_rows=0,num_cols=0;
+        // iterate over all rows in table
+    for (xml_node table_row_node = t.child(TABLE_ROW); table_row_node;
+     table_row_node = table_row_node.next_sibling(TABLE_ROW))
+    {
+        // iterate over all table columns in the row
+        for (xml_node table_box = table_row_node.child(TABLE_COLUMN); 
+        table_box; table_box = table_box.next_sibling(TABLE_COLUMN))
+        {
+            // inc num cols only for the first row
+            if (num_rows == 0)
+            {
+                num_cols++;
+            }
+        }
+        num_rows++;
+    }
+    *rows = num_rows;
+    *cols = num_cols;
+}
+
 
 void Distilator::handle_paragraph(xml_node paragraph_node, Paragraph &p)
 {
@@ -442,19 +472,6 @@ void Distilator::handle_paragraph(xml_node paragraph_node, Paragraph &p)
     }
 }
 
-void Distilator::extract_table(xml_node table_node, int num)
-{
-    
-    // create new 'csv' file for table, named - table1.csv, table2.csv,...
-    //std::string file_name = this->zip_path + "table"+std::to_string(num)+".csv";
-    //std::ofstream table_file(file_name);
-    // handle the table - writes to table_text
-    handle_table(table_node);
-
-    // write table_text to the file
-    //table_file << this->table_text;
-    //table_file.close();
-}
 
 /*
     Docx Functions
@@ -503,14 +520,17 @@ void Distilator::distil_docx()
         cout<<"File is Corrupted! on body node" << endl;
         return;
     }
-    int i=0;
+    int rows,cols;
     for(xml_node child = body_node.first_child(); child; child=child.next_sibling())
     {
         if (strcmp(child.name(), PARAGRAPH) == 0) {
             auto p = this->new_doc->AppendParagraph();
             this->handle_paragraph(child, p);
         }
-        else if (strcmp(child.name(), TABLE) == 0)
-            this->extract_table(child, i++);
+        else if (strcmp(child.name(), TABLE) == 0) {
+            get_dimensions_table(child,&rows,&cols);
+            auto t = this->new_doc->AppendTable(rows,cols);
+            this->handle_table(child, t);
+        }
     }   
 }

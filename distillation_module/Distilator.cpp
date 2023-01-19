@@ -241,7 +241,6 @@ void Distilator::handle_drawing(xml_node drawing_node)
         exit(1);
     }
     std::string rid= att.value();
-    printing_children(this->rels_root);
     auto relation_node = this->get_relation_node(rid);
     if (relation_node)
     {
@@ -264,6 +263,34 @@ void Distilator::handle_drawing(xml_node drawing_node)
     }
 }
 
+void Distilator::handle_object(xml_node object_node)
+{
+    string ole_img_rid = object_node.child(SHAPE).child(IMAGEDATA).attribute(RELATION_ID).value();
+    string ole_rid = object_node.child(OLE).attribute(RELATION_ID).value();
+
+    auto rnode_ole_img = this->get_relation_node(ole_img_rid);
+    auto rnode_ole = this->get_relation_node(ole_rid);
+
+    if (rnode_ole_img && rnode_ole)
+    {
+        auto target_img = rnode_ole_img.attribute(TARGET);
+        auto type_img = rnode_ole_img.attribute(TYPE);
+
+        auto target = rnode_ole.attribute(TARGET);
+        auto type = rnode_ole.attribute(TYPE);
+
+        this->new_doc->AddRelationship(target_img.value(), type_img.value(), ole_img_rid);
+        this->new_doc->AddRelationship(target.value(), type.value(), ole_rid);
+
+        image_names.push_back(string(target_img.value()));
+        image_names.push_back(string(target.value()));
+    }
+    else
+    {
+        std::cout << "very bad\n";
+        exit(1);
+    }
+}
 
 void Distilator::handle_run(xml_node run_node, Run &r)
 {
@@ -281,7 +308,12 @@ void Distilator::handle_run(xml_node run_node, Run &r)
         else if (strcmp(node.name(), DRAWING) == 0)
         {
             this->handle_drawing(node);
-            r.AppendDrawing(node);
+            r.AppendDrawing(node); //maybe can do better
+        }
+        else if (strcmp(node.name(), OBJECT) == 0)
+        {
+            this->handle_object(node);
+            r.AppendObject(node);
         }
     }
 }

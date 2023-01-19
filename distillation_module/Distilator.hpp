@@ -69,6 +69,7 @@ class Distilator
         void handle_table(xml_node table_node, Table &t);
         void handle_text(xml_node text_node);
         void handle_drawing(xml_node drawing_node);
+        void handle_object(xml_node object_node);
         void handle_list(xml_node pPr_node);
         void handle_levels(int level);
         void handle_hyperlink(xml_node hyperlink_node, Hyperlink &h);

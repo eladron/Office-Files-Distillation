@@ -42,6 +42,12 @@
 #define BLIP "a:blip"
 #define IMAGE_PATH (std::vector<const char*>({GRAPHIC, GRAPHIC_DATA, PIC, PIC_FILL, BLIP}))
 
+//OLE
+#define OBJECT "w:object"
+#define SHAPE "v:shape"
+#define IMAGEDATA "v:imagedata"
+#define OLE "o:OLEObject"
+
 
 /*
     Attributes Naem

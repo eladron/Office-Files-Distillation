@@ -32,9 +32,11 @@ class Distilator
     /*
         Docx Properties
     */
+        vector<string> image_names;
         map<int, int> level_counters;
         int list_level;
         string table_text;
+        char dmz[1000]; //without this, your segfault
     
     /*
         New File Objects

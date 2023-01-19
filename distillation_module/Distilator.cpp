@@ -74,9 +74,15 @@ Distilator::Distilator(char* file_name, char* new_file)
 
 Distilator::~Distilator()
 {
-
     this->new_doc->Save();
-    delete(new_doc);
+    //delete(new_doc);
+
+    for(auto image_name : image_names)
+    {
+        string command = "cd " + this->original_folder + " ; zip ../" + this->new_file + " word/" + image_name;
+        system(command.c_str());
+    }
+
     string command = "rm -r " + this->original_folder;
     system(command.c_str());
 }
@@ -239,9 +245,12 @@ void Distilator::handle_drawing(xml_node drawing_node)
     auto relation_node = this->get_relation_node(rid);
     if (relation_node)
     {
-        /*
-        std::string img_name = relation_node.attribute("Target").value();
+        auto target = relation_node.attribute(TARGET);
+        auto type = relation_node.attribute(TYPE);
 
+        this->new_doc->AddRelationship(target.value(), type.value(), rid);
+        image_names.push_back(string(target.value()));
+        /*
         string command = "cp " + this->original_folder + "/word/" + img_name + " " + this->zip_path + img_name.substr(6);
         system(command.c_str());
 
@@ -270,7 +279,10 @@ void Distilator::handle_run(xml_node run_node, Run &r)
             r.AppendText(node.child_value());
         }
         else if (strcmp(node.name(), DRAWING) == 0)
+        {
             this->handle_drawing(node);
+            r.AppendDrawing(node);
+        }
     }
 }
 

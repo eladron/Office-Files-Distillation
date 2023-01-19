@@ -237,6 +237,7 @@ namespace docx
 
     // text
     void AppendText(const std::string text);
+    void AppendDrawing(pugi::xml_node &drawing_node);
     std::string GetText();
     void ClearText();
     void AppendLineBreak();

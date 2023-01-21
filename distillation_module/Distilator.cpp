@@ -98,11 +98,24 @@ xml_node Distilator::get_relation_node(string relation)
     return this->rels_root;
 }
 
+xml_node Distilator::get_style_node(string style_id, string style_tag)
+{
+    for (auto style = this->styles_root.child(STYLE); style; style=style.next_sibling(STYLE))
+    {
+        xml_attribute id = style.attribute(STYLE_ID);
+        xml_attribute tag = style.attribute(STYLE_TYPE);
+        if (!id || !tag)
+            continue;
+        if (style_id.compare(id.value()) == 0 && style_tag.compare(tag.value()) == 0)
+            return style;
+    }
+    return this->styles_root;
+}
+
 void Distilator::print_levels_counters()
 {
     for(auto iter = this->level_counters.begin(); iter != this->level_counters.end(); ++iter)
         cout<< "level = " << iter->first << ", counter = " << iter->second << endl;
-
 }
 
 void Distilator::handle_levels(int level)
@@ -300,9 +313,7 @@ void Distilator::handle_run(xml_node run_node, Run &r)
     }
     for (xml_node node = run_node.first_child(); node; node = node.next_sibling())
     {
-        cout << node.name() << endl;
         if (strcmp(node.name(), TEXT) == 0) {
-            cout << node.child_value() << endl;
             r.AppendText(node.child_value());
         }
         else if (strcmp(node.name(), DRAWING) == 0)
@@ -327,12 +338,13 @@ void Distilator::handle_run_properties(xml_node rpr, Run &r)
             this->set_size_run(child, r);
         }
         this->set_text_formmating(child, r);
-        if (strcmp(name, RSTYLE) == 0){
-            this->set_run_style(child, r);
-        }
         if (strcmp(name, HIGHLIGHT) == 0) {
             this->set_highlight(child, r);
         }
+    }
+    auto rstyle = rpr.child(RSTYLE);
+    if (rstyle) {
+        this->set_run_style(rstyle, r);
     }
 }
 
@@ -404,7 +416,13 @@ void Distilator::set_run_style(xml_node rStyle, Run &r)
         cout<<"File is Corrupted! no val in rStyle" << endl;
         return;
     }
-    r.SetRunStyle(val.value());
+    auto style_node = this->get_style_node(val.value(), CHARACTER_STYLE_TYPE);
+    if (style_node == this->styles_root) {
+        cout<<"File is Corrupted! no style matching the " << val.value() << endl;
+        return;
+    }
+    auto style_rpr = style_node.child(RUN_PROPERTY);
+    this->handle_run_properties(style_rpr, r);
 }
 
 //Sets the highlight in run
@@ -490,6 +508,7 @@ void Distilator::handle_paragraph(xml_node paragraph_node, Paragraph &p)
     this->handle_paragraph_properties(paragraph_node, p);
     for (xml_node child = paragraph_node.first_child(); child; child = child.next_sibling())
     {
+        cout <<child.name() << endl;
         if (strcmp(child.name(), RUN) == 0) {
             auto r = p.AppendRun();
             this->handle_run(child, r);
@@ -535,6 +554,18 @@ void Distilator::init_docx()
     }
     this->rels_root = this->rels.first_child();    
     cout<<"parsed relations.xml"<<endl;
+
+    /*
+        Open styles
+    */
+    auto styles_path = this->original_folder + "/word/styles.xml";
+    res = this->styles.load_file(styles_path.c_str());
+    if (!res) {
+        cout<<"Error parsing styles.xml"<<endl;
+        return;
+    }
+    this->styles_root = this->styles.first_child();
+    cout<<"parsed styles.xml"<<endl;
 
     /*
         New File Initialization

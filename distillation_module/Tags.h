@@ -48,6 +48,15 @@
 #define IMAGEDATA "v:imagedata"
 #define OLE "o:OLEObject"
 
+/*
+    Style Tags
+*/
+#define STYLE "w:style"
+#define STYLE_ID "w:styleId"
+#define STYLE_TYPE "w:type"
+#define CHARACTER_STYLE_TYPE "character"
+#define NUMBERING_STYLE_TYPE "numbering"
+#define PARAGRAPH_STYLE_TYPE "paragraph"
 
 /*
     Attributes Naem

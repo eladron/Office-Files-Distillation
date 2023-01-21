@@ -29,6 +29,9 @@ class Distilator
         xml_node doc_root;
         xml_document rels;
         xml_node rels_root;
+        xml_document styles;
+        xml_node styles_root;
+
     /*
         Docx Properties
     */
@@ -36,7 +39,7 @@ class Distilator
         map<int, int> level_counters;
         int list_level;
         string table_text;
-        char dmz[1000]; //without this, your segfault
+        //char dmz[1000]; //without this, your segfault
     
     /*
         New File Objects
@@ -74,9 +77,14 @@ class Distilator
         void handle_levels(int level);
         void handle_hyperlink(xml_node hyperlink_node, Hyperlink &h);
         void handle_paragraph_in_table(xml_node table_box_paragraph, Paragraph &p);
-        void print_levels_counters();
+        xml_node get_style_node(string style_id, string style_tag);
         xml_node get_relation_node(string relation);
         void get_dimensions_table(xml_node t, int *rows, int *cols);
+
+        /*
+        aux functions
+        */
+        void print_levels_counters();
     public:
         Distilator(char* file_name, char* path_to_zip);
         void init_docx();

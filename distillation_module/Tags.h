@@ -20,17 +20,8 @@
 #define TABLE_ROW "w:tr"
 #define TABLE_COLUMN "w:tc"
 #define NAME "w:name"
-#define RUN_PROPERTY "w:rPr"
-#define RIGHT_TO_LEFT "w:rtl"
-#define LEFT_TO_RIGHT "w:ltr"
-#define BOLD "w:b"
-#define ITALIC "w:i"
-#define UNDERLINE "w:u"
-#define SIZE "w:sz"
-#define JUSTIFICATION "w:jc"
 #define BIDI "w:bidi"
-#define RSTYLE "w:rStyle"
-#define HIGHLIGHT "w:highlight"
+
 #define MATH_PARAGRAPH ("m:oMathPara")
 #define DRAWING "w:drawing"
 #define INLINE "wp:inline"
@@ -41,6 +32,19 @@
 #define PIC_FILL "pic:blipFill"
 #define BLIP "a:blip"
 #define IMAGE_PATH (std::vector<const char*>({GRAPHIC, GRAPHIC_DATA, PIC, PIC_FILL, BLIP}))
+
+// Run Properties
+#define RUN_PROPERTY "w:rPr"
+#define BOLD "w:b"
+#define ITALIC "w:i"
+#define UNDERLINE "w:u"
+#define SIZE "w:sz"
+#define JUSTIFICATION "w:jc"
+#define RSTYLE "w:rStyle"
+#define HIGHLIGHT "w:highlight"
+#define COLOR "w:color"
+#define COLOR "w:color"
+
 
 //OLE
 #define OBJECT "w:object"

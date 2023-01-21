@@ -677,6 +677,14 @@ namespace docx
     Box::SetBorders_(w_pBdr, elemName, style, width, color);
   }
 
+  void Paragraph::setParagraphLayoutRight()
+  {
+    auto w_jc = w_pPr_.child("w:bidi");
+    if (!w_jc) {
+      w_pPr_.append_child("w:bidi");
+    }
+  }
+
   void Paragraph::SetFontSize(const double fontSize)
   {
     for (auto r = FirstRun(); r; r = r.Next()) {
@@ -1199,19 +1207,6 @@ namespace docx
     return w_rPr_.child("w:spacing").attribute("w:val").as_int();
   }
 
-  void Run::SetRunStyle(const std::string rstyle)
-  {
-    auto rStyle = w_rPr_.child("w:rStyle");
-    if (!rStyle) {
-      rStyle = w_rPr_.append_child("w:rStyle");
-    }
-    auto rStyleVal = rStyle.attribute("w:val");
-    if (!rStyleVal) {
-      rStyleVal = rStyle.append_attribute("w:val");
-    }
-    rStyleVal.set_value(rstyle.c_str());
-  }
-
   void Run::SetHighlight(const std::string highlight)
   {
     auto highlightNode = w_rPr_.child("w:highlight");
@@ -1223,6 +1218,19 @@ namespace docx
       highlightVal = highlightNode.append_attribute("w:val");
     }
     highlightVal.set_value(highlight.c_str());
+  }
+
+  void Run::SetColor(const std::string color)
+  {
+    auto colorNode = w_rPr_.child("w:color");
+    if (!colorNode) {
+      colorNode = w_rPr_.append_child("w:color");
+    }
+    auto colorVal = colorNode.attribute("w:val");
+    if (!colorVal) {
+      colorVal = colorNode.append_attribute("w:val");
+    }
+    colorVal.set_value(color.c_str());
   }
 
   bool Run::IsPageBreak()

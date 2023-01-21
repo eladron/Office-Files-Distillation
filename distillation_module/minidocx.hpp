@@ -266,9 +266,15 @@ namespace docx
     void SetCharacterSpacing(const int characterSpacing);
     int GetCharacterSpacing();
 
-    void SetRunStyle(const std::string runStyle);
     void SetHighlight(const std::string highlight);
-
+    void SetColor(const std::string color);
+    using TextDirection = unsigned int;
+    enum: TextDirection
+    {
+      LeftToRight = 1 << 0,
+      RightToLeft = 1 << 1
+    };
+    void SetTextDirection(const std::string textDirection);
     
 
     // Run
@@ -431,6 +437,7 @@ namespace docx
     void SetRightBorder(const BorderStyle style = BorderStyle::Single, const double width = 0.5, const char *color = "auto");
     void SetBorders(const BorderStyle style = BorderStyle::Single, const double width = 0.5, const char *color = "auto");
     void SetBorders_(const char *elemName, const BorderStyle style, const double width, const char *color);
+    void setParagraphLayoutRight();
 
     // helper
     void SetFontSize(const double fontSize);

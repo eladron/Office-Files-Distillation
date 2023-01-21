@@ -197,6 +197,9 @@ void Distilator::handle_paragraph_properties(xml_node paragraph_node, Paragraph 
         return;
     }
     this->set_paragraph_allignment(pPr_node, p);
+    if (pPr_node.child(BIDI)) {
+        p.setParagraphLayoutRight();
+    }
     xml_node pStyle_node = pPr_node.child(PARAGRAPH_STYLE);
     if (pStyle_node != 0)
     {
@@ -341,6 +344,9 @@ void Distilator::handle_run_properties(xml_node rpr, Run &r)
         if (strcmp(name, HIGHLIGHT) == 0) {
             this->set_highlight(child, r);
         }
+        else if (strcmp(name, COLOR) == 0) {
+            this->set_color(child, r);
+        }
     }
     auto rstyle = rpr.child(RSTYLE);
     if (rstyle) {
@@ -436,6 +442,24 @@ void Distilator::set_highlight(xml_node highlight, Run &r)
     r.SetHighlight(val.value());
 }
 
+//Sets the color in run
+void Distilator::set_color(xml_node color, Run &r)
+{
+    auto val = color.attribute(VALUE);
+    if (!val) {
+        cout<<"File is Corrupted! no val in color" << endl;
+        return;
+    }
+    string color_str = val.value();
+    if (color_str.size() < 6) {
+        cout<<"File is Corrupted! color is too short" << endl;
+        return;
+    }
+    while(color_str.size() > 6 && color_str[0] == '0')
+        color_str.erase(color_str.begin());
+    r.SetColor(color_str);
+}
+
 // writes the paragraph to table_text
 void Distilator::handle_paragraph_in_table(xml_node table_box_paragraph, Paragraph &p)
 {
@@ -508,7 +532,6 @@ void Distilator::handle_paragraph(xml_node paragraph_node, Paragraph &p)
     this->handle_paragraph_properties(paragraph_node, p);
     for (xml_node child = paragraph_node.first_child(); child; child = child.next_sibling())
     {
-        cout <<child.name() << endl;
         if (strcmp(child.name(), RUN) == 0) {
             auto r = p.AppendRun();
             this->handle_run(child, r);

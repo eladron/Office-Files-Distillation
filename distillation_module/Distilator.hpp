@@ -68,6 +68,7 @@ class Distilator
         void set_run_style(xml_node rStyle, Run &r);
         void set_highlight(xml_node highlight, Run &r);
         void set_color(xml_node color, Run &r);
+        void set_font(xml_node font, Run &r);
 
         void handle_table(xml_node table_node, Table &t);
         void handle_text(xml_node text_node);

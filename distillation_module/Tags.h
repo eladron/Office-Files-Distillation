@@ -43,7 +43,13 @@
 #define RSTYLE "w:rStyle"
 #define HIGHLIGHT "w:highlight"
 #define COLOR "w:color"
-#define COLOR "w:color"
+
+// FONT
+#define FONT "w:rFonts"
+#define FONT_ASCII "w:ascii"
+#define FONT_CS "w:cs"
+#define FONT_EAST_ASIAN "w:eastAsia"
+#define FONT_HANSI "w:hAnsi"
 
 
 //OLE

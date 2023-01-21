@@ -311,9 +311,8 @@ void Distilator::handle_object(xml_node object_node)
 void Distilator::handle_run(xml_node run_node, Run &r)
 {
     xml_node rpr = run_node.child(RUN_PROPERTY);
-    if (rpr) {
+    if (rpr)
         this->handle_run_properties(rpr, r);
-    }
     for (xml_node node = run_node.first_child(); node; node = node.next_sibling())
     {
         if (strcmp(node.name(), TEXT) == 0) {
@@ -346,6 +345,9 @@ void Distilator::handle_run_properties(xml_node rpr, Run &r)
         }
         else if (strcmp(name, COLOR) == 0) {
             this->set_color(child, r);
+        }
+        else if (strcmp(name, FONT) == 0) {
+            this->set_font(child, r);
         }
     }
     auto rstyle = rpr.child(RSTYLE);
@@ -458,6 +460,21 @@ void Distilator::set_color(xml_node color, Run &r)
     while(color_str.size() > 6 && color_str[0] == '0')
         color_str.erase(color_str.begin());
     r.SetColor(color_str);
+}
+
+void Distilator::set_font(xml_node font, Run &r)
+{
+    auto ascii = font.attribute(FONT_ASCII);
+    auto east_asian = font.attribute(FONT_EAST_ASIAN);
+    string ascii_str = "";
+    string east_asian_str = "";
+    if (ascii) {
+        ascii_str = ascii.value();
+    }
+    if (east_asian) {
+        east_asian_str = east_asian.value();
+    }
+    r.SetFont(ascii_str, east_asian_str);
 }
 
 // writes the paragraph to table_text

@@ -462,6 +462,7 @@ void Distilator::set_color(xml_node color, Run &r)
     r.SetColor(color_str);
 }
 
+//Sets the font in run
 void Distilator::set_font(xml_node font, Run &r)
 {
     auto ascii = font.attribute(FONT_ASCII);

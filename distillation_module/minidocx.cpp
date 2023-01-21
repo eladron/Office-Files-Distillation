@@ -151,7 +151,6 @@ namespace docx
     zip_entry_close(zip);
 
     zip_entry_open(zip, "word/_rels/document.xml.rels");
-    std::cout<<std::strlen(rels_buf)<<std::endl;
     zip_entry_write(zip, rels_buf, std::strlen(rels_buf));
     zip_entry_close(zip);
 
@@ -685,6 +684,11 @@ namespace docx
     }
   }
 
+  void Paragraph::setRunProperties(pugi::xml_node &w_rPr)
+  {
+    w_pPr_.append_copy(w_rPr);
+  }
+
   void Paragraph::SetFontSize(const double fontSize)
   {
     for (auto r = FirstRun(); r; r = r.Next()) {
@@ -1112,25 +1116,100 @@ namespace docx
     return szVal.as_int() / 2.0;
   }
 
+  void Run::SetFontSizeComplexScript(const double fontSize)
+  {
+    std::cout << "fontSize = " << fontSize << std::endl;
+    auto szCs = w_rPr_.child("w:szCs");
+    if (!szCs) {
+      szCs = w_rPr_.append_child("w:szCs");
+    }
+    auto szCsVal = szCs.attribute("w:val");
+    if (!szCsVal) {
+      szCsVal = szCs.append_attribute("w:val");
+    }
+    // font size in half-points (1/144 of an inch)
+    szCsVal.set_value(fontSize * 2);
+  }
+
   void Run::SetFont(const std::string fontAscii, 
-                    const std::string fontEastAsia)
+                 const std::string fontEastAsia,
+                  const std::string fontHAnsi,
+                  const std::string fontCs,
+                  const std::string fontHint,
+                  const std::string fontAsciiTheme,
+                  const std::string fontEastAsiaTheme,
+                  const std::string fontHAnsiTheme,
+                  const std::string fontCsTheme)
   {
     auto rFonts = w_rPr_.child("w:rFonts");
     if (!rFonts) {
       rFonts = w_rPr_.append_child("w:rFonts");
     }
-    auto rFontsAscii = rFonts.attribute("w:ascii");
-    if (!rFontsAscii) {
-      rFontsAscii = rFonts.append_attribute("w:ascii");
+    if (!fontAscii.empty())
+    {
+      auto rFontsAscii = rFonts.attribute("w:ascii");
+      if (!rFontsAscii) {
+        rFontsAscii = rFonts.append_attribute("w:ascii");
+      }
+      rFontsAscii.set_value(fontAscii.c_str());
     }
-    auto rFontsEastAsia = rFonts.attribute("w:eastAsia");
-    if (!rFontsEastAsia) {
-      rFontsEastAsia = rFonts.append_attribute("w:eastAsia");
+    if (!fontEastAsia.empty())
+    {
+      auto rFontsEastAsia = rFonts.attribute("w:eastAsia");
+      if (!rFontsEastAsia) {
+        rFontsEastAsia = rFonts.append_attribute("w:eastAsia");
+      }
+      rFontsEastAsia.set_value(fontEastAsia.c_str());
     }
-    rFontsAscii.set_value(fontAscii.c_str());
-    rFontsEastAsia.set_value(fontEastAsia.empty() 
-                           ? fontAscii.c_str()
-                           : fontEastAsia.c_str());
+    if (!fontHAnsi.empty()) {
+      auto rFontsHAnsi = rFonts.attribute("w:hAnsi");
+      if (!rFontsHAnsi) {
+        rFontsHAnsi = rFonts.append_attribute("w:hAnsi");
+      }
+      rFontsHAnsi.set_value(fontHAnsi.c_str());
+    }
+    if (!fontCs.empty()) {
+      auto rFontsCs = rFonts.attribute("w:cs");
+      if (!rFontsCs) {
+        rFontsCs = rFonts.append_attribute("w:cs");
+      }
+      rFontsCs.set_value(fontCs.c_str());
+    }
+    if (!fontHint.empty()) {
+      auto rFontsHint = rFonts.attribute("w:hint");
+      if (!rFontsHint) {
+        rFontsHint = rFonts.append_attribute("w:hint");
+      }
+      rFontsHint.set_value(fontHint.c_str());
+    }
+    if (!fontAsciiTheme.empty()) {
+      auto rFontsAsciiTheme = rFonts.attribute("w:asciiTheme");
+      if (!rFontsAsciiTheme) {
+        rFontsAsciiTheme = rFonts.append_attribute("w:asciiTheme");
+      }
+      rFontsAsciiTheme.set_value(fontAsciiTheme.c_str());
+    }
+    if (!fontEastAsiaTheme.empty()) {
+      auto rFontsEastAsiaTheme = rFonts.attribute("w:eastAsiaTheme");
+      if (!rFontsEastAsiaTheme) {
+        rFontsEastAsiaTheme = rFonts.append_attribute("w:eastAsiaTheme");
+      }
+      rFontsEastAsiaTheme.set_value(fontEastAsiaTheme.c_str());
+    }
+    if (!fontHAnsiTheme.empty()) {
+      auto rFontsHAnsiTheme = rFonts.attribute("w:hAnsiTheme");
+      if (!rFontsHAnsiTheme) {
+        rFontsHAnsiTheme = rFonts.append_attribute("w:hAnsiTheme");
+      }
+      rFontsHAnsiTheme.set_value(fontHAnsiTheme.c_str());
+    }
+    if (!fontCsTheme.empty()) {
+      auto rFontsCsTheme = rFonts.attribute("w:csTheme");
+      if (!rFontsCsTheme) {
+        rFontsCsTheme = rFonts.append_attribute("w:csTheme");
+      }
+      rFontsCsTheme.set_value(fontCsTheme.c_str());
+    }
   }
 
   void Run::GetFont(std::string &fontAscii, 
@@ -1253,6 +1332,11 @@ namespace docx
   Run::operator bool()
   {
     return w_r_;
+  }
+
+  pugi::xml_node& Run::GetRunProperitesNode()
+  {
+    return w_rPr_;
   }
 
   // class Hyperlink

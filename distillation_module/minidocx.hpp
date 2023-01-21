@@ -254,9 +254,19 @@ namespace docx
     };
     void SetFontSize(const double fontSize);
     double GetFontSize();
+    void SetFontSizeComplexScript(const double fontSize);
+
 
     void SetFont(const std::string fontAscii, 
-                 const std::string fontEastAsia = "");
+                 const std::string fontEastAsia = "",
+                  const std::string fontHAnsi = "",
+                  const std::string fontCs = "",
+                  const std::string fontHint = "",
+                  const std::string fontAsciiTheme = "",
+                  const std::string fontEastAsiaTheme = "",
+                  const std::string fontHAnsiTheme = "",
+                  const std::string fontCsTheme = "");
+                  
     void GetFont(std::string &fontAscii, 
                  std::string &fontEastAsia);
 
@@ -276,7 +286,7 @@ namespace docx
     };
     void SetTextDirection(const std::string textDirection);
     
-
+    pugi::xml_node& GetRunProperitesNode();
     // Run
     void Remove();
     bool IsPageBreak();
@@ -439,10 +449,14 @@ namespace docx
     void SetBorders_(const char *elemName, const BorderStyle style, const double width, const char *color);
     void setParagraphLayoutRight();
 
+    // run properties functions
+    void setRunProperties(pugi::xml_node& rpr);
+
     // helper
     void SetFontSize(const double fontSize);
     void SetFont(const std::string fontAscii, 
-                 const std::string fontEastAsia = "");
+                  const std::string fontEastAsia = ""
+                 );
     void SetFontStyle(const Run::FontStyle fontStyle);
     void SetCharacterSpacing(const int characterSpacing);
     std::string GetText();

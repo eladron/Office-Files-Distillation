@@ -57,13 +57,17 @@ class Distilator
     */
         void handle_paragraph(xml_node paragraph_node, Paragraph &p);
         void handle_paragraph_properties(xml_node paragraph_node, Paragraph &p);
-        void set_paragraph_allignment(xml_node pPr_node, Paragraph &p);
+        void set_paragraph_allignment(xml_node ppr, Paragraph &p);
+        void set_paragraph_style(xml_node pStyle, Paragraph &p);
+        void set_paragraph_spacing(xml_node spacing, Paragraph &p);
+        void set_paragraph_run_properties(xml_node rpr, Paragraph &p);
     /*
         Run Operations
     */
         void handle_run(xml_node run_node, Run &r);
         void handle_run_properties(xml_node rpr, Run &r);
         void set_size_run(xml_node sz, Run &r);
+        void set_size_complex_run(xml_node szCs, Run &r);
         void set_text_formmating(xml_node text_style, Run &r);
         void set_run_style(xml_node rStyle, Run &r);
         void set_highlight(xml_node highlight, Run &r);

@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstring>
 #include <algorithm>
+#include <filesystem>
 #include <unistd.h>
 #include "Tags.h"
 
@@ -77,11 +78,12 @@ Distilator::~Distilator()
 {
     this->new_doc->Save();
     //delete(new_doc);
-
     string curdir = get_current_dir_name();
+    string command_cd = "cd " + this->original_folder;
     for(auto image_name : image_names)
     {
-        string command = "cd " + this->original_folder + " ; zip -g \"" + curdir + "/" + this->new_file + "\" word/" + image_name;
+        string command = command_cd + " ; " + "zip -g " + filesystem::absolute(this->new_file).c_str() + " word/" + image_name + " > /dev/null";
+        //cout << command << endl;
         system(command.c_str());
     }
 

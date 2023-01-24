@@ -560,8 +560,12 @@ void Distilator::set_color(xml_node color, Run &r)
         return;
     }
     string color_str = val.value();
+    if (color_str.compare("auto") == 0) {
+        r.SetColor("auto");
+        return;
+    }
     if (color_str.size() < 6) {
-        cout<<"File is Corrupted! color is too short" << endl;
+        cout<<"File is Corrupted! color is too short : "<<color_str << endl;
         return;
     }
     while(color_str.size() > 6 && color_str[0] == '0')
@@ -620,20 +624,6 @@ void Distilator::set_font(xml_node font, Run &r)
     r.SetFont(ascii_str, east_asian_str, hAnsi_str, cs_str, hint_str, ascii_theme_str, east_asian_theme_str, hAnsi_theme_str, cs_theme_str);
 }
 
-// writes the paragraph to table_text
-void Distilator::handle_paragraph_in_table(xml_node table_box_paragraph, Paragraph &p)
-{
-    // iterate over runs in paragraph
-    for (xml_node table_box_run = table_box_paragraph.child(RUN); 
-    table_box_run; table_box_run = table_box_run.next_sibling(RUN))
-    {
-        // add text in run
-        // this->table_text.append(table_box_run.child(TEXT).value());
-        p.AppendRun(table_box_run.child(TEXT).child_value());
-    }
- 
-}
-
 // writes the table to table_text in csv format
 void Distilator::handle_table(xml_node table_node, Table &t)
 {
@@ -653,7 +643,8 @@ void Distilator::handle_table(xml_node table_node, Table &t)
             table_box_paragraph; table_box_paragraph = table_box_paragraph.next_sibling(PARAGRAPH))
             {
                // cout << "row,col:" << row << "," << col << endl;
-                handle_paragraph_in_table(table_box_paragraph,p);
+              //  handle_paragraph_in_table(table_box_paragraph,p);
+                this->handle_paragraph(table_box_paragraph, p);
             }
             col++;
         }

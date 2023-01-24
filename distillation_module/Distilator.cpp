@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstring>
 #include <algorithm>
+#include <unistd.h>
 #include "Tags.h"
 
 using namespace pugi;
@@ -77,9 +78,10 @@ Distilator::~Distilator()
     this->new_doc->Save();
     //delete(new_doc);
 
+    string curdir = get_current_dir_name();
     for(auto image_name : image_names)
     {
-        string command = "cd " + this->original_folder + " ; zip ../" + this->new_file + " word/" + image_name;
+        string command = "cd " + this->original_folder + " ; zip -g \"" + curdir + "/" + this->new_file + "\" word/" + image_name;
         system(command.c_str());
     }
 

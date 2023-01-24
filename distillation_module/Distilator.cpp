@@ -100,11 +100,24 @@ xml_node Distilator::get_relation_node(string relation)
     return this->rels_root;
 }
 
+xml_node Distilator::get_style_node(string style_id, string style_tag)
+{
+    for (auto style = this->styles_root.child(STYLE); style; style=style.next_sibling(STYLE))
+    {
+        xml_attribute id = style.attribute(STYLE_ID);
+        xml_attribute tag = style.attribute(STYLE_TYPE);
+        if (!id || !tag)
+            continue;
+        if (style_id.compare(id.value()) == 0 && style_tag.compare(tag.value()) == 0)
+            return style;
+    }
+    return this->styles_root;
+}
+
 void Distilator::print_levels_counters()
 {
     for(auto iter = this->level_counters.begin(); iter != this->level_counters.end(); ++iter)
         cout<< "level = " << iter->first << ", counter = " << iter->second << endl;
-
 }
 
 void Distilator::handle_levels(int level)
@@ -144,6 +157,132 @@ void Distilator::handle_list(xml_node pPr_node)
     }
 }
 
+void Distilator::handle_paragraph(xml_node paragraph_node, Paragraph &p)
+{
+    xml_node ppr = paragraph_node.child(PARAGRAPH_PROPERTY);
+    if (ppr)
+        this->handle_paragraph_properties(ppr, p);
+    for (xml_node child = paragraph_node.first_child(); child; child = child.next_sibling())
+    {
+        if (strcmp(child.name(), RUN) == 0) {
+            auto r = p.AppendRun();
+            this->handle_run(child, r);
+        }
+        else if (strcmp(child.name(), HYPERLINK) == 0) {
+            auto h = p.AppendHyperlink();
+            this->handle_hyperlink(child, h);
+        }
+        else if (strcmp(child.name(), MATH_PARAGRAPH) == 0){
+            p.appendMath(child);
+        }
+    }
+}
+
+void Distilator::handle_paragraph_properties(xml_node ppr, Paragraph &p)
+{
+    this->set_paragraph_allignment(ppr, p);
+    for(auto child = ppr.first_child(); child; child=child.next_sibling())
+    {
+        auto name = child.name();
+        if (strcmp(name, BIDI) == 0) {
+            p.setParagraphLayoutRight();
+        }
+        else if (strcmp(name, SPACING) == 0) {
+            this->set_paragraph_spacing(child, p);
+        }
+        else if (strcmp(name, RUN_PROPERTY) == 0) {
+            this->set_paragraph_run_properties(child, p);
+        }
+    }
+    auto pstyle = ppr.child(PARAGRAPH_STYLE);
+    if (pstyle) {
+        this->set_paragraph_style(pstyle, p);
+    }
+}
+
+//Sets the paragraph allignment
+void Distilator::set_paragraph_allignment(xml_node ppr, Paragraph &p)
+{
+    xml_node jc_node = ppr.child(JUSTIFICATION);
+    if (jc_node != 0)
+    {
+        xml_attribute att = jc_node.attribute(VALUE);
+        if (att != 0)
+        {
+            if (strcmp(att.value(), "start") == 0 || strcmp(att.value(), "left") == 0)
+                p.SetAlignment(Paragraph::Alignment::Left);
+            else if (strcmp(att.value(), "end") == 0 || strcmp(att.value(), "right") == 0)
+                p.SetAlignment(Paragraph::Alignment::Right);
+            else if (strcmp(att.value(), "center") == 0)
+                p.SetAlignment(Paragraph::Alignment::Centered);
+            else if (strcmp(att.value(), "both") == 0)
+                p.SetAlignment(Paragraph::Alignment::Justified);
+            else if (strcmp(att.value(), "distribute") == 0)
+                p.SetAlignment(Paragraph::Alignment::Distributed);
+            else {
+                cout << "Justification Error: File is Corrupted" << endl;
+            }
+        }
+    }
+}
+
+//Sets the paragraph style
+void Distilator::set_paragraph_style(xml_node pStyle, Paragraph &p)
+{
+    auto val = pStyle.attribute(VALUE);
+    if (!val) {
+        cout<<"File is Corrupted! no val in pStyle" << endl;
+        return;
+    }
+    auto style_node = this->get_style_node(val.value(), PARAGRAPH_STYLE_TYPE);
+    if (style_node == this->styles_root) {
+        cout<<"File is Corrupted! no style matching the " << val.value() << endl;
+        return;
+    }
+    auto style_ppr = style_node.child(PARAGRAPH_PROPERTY);
+    if (style_ppr)
+        this->handle_paragraph_properties(style_ppr, p);
+    auto style_ppr_rpr = style_node.child(RUN_PROPERTY);
+    if (style_ppr_rpr)
+        this->set_paragraph_run_properties(style_ppr_rpr, p);
+}
+
+//Sets the paragraph spacing
+void Distilator::set_paragraph_spacing(xml_node spacing, Paragraph &p)
+{
+    auto before = spacing.attribute(BEFORE);
+    auto after = spacing.attribute(AFTER);
+    auto line = spacing.attribute(LINE);
+    auto lineRule = spacing.attribute(LINE_RULE);
+    auto beforeAutoSpacing = spacing.attribute(BEFORE_AUTOSPACING);
+    auto afterAutoSpacing = spacing.attribute(AFTER_AUTOSPACING);
+    if (before) {
+        p.SetBeforeSpacing(stoi(before.value()));
+    }
+    if (after) {
+        p.SetAfterSpacing(stoi(after.value()));
+    }
+    if (line && lineRule) {
+        p.SetLineSpacing(stoi(line.value()), lineRule.value());
+    }
+    if (beforeAutoSpacing && strcmp(beforeAutoSpacing.value(),"1") == 0) {
+        p.SetBeforeSpacingAuto();
+    }
+    if (afterAutoSpacing && strcmp(afterAutoSpacing.value(),"1") == 0) {
+        p.SetAfterSpacingAuto();
+    }
+}
+
+void Distilator::set_paragraph_run_properties(xml_node rpr, Paragraph &p)
+{
+    auto r = p.AppendRun();
+    this->handle_run_properties(rpr, r);
+    auto rpr_copy = r.GetRunProperitesNode();
+    p.setRunProperties(rpr_copy);
+    r.Remove();
+
+}
+
 void Distilator::handle_hyperlink(xml_node hyperlink_node, Hyperlink &h)
 {
     auto id = hyperlink_node.attribute(RELATION_ID);
@@ -175,49 +314,6 @@ void Distilator::handle_hyperlink(xml_node hyperlink_node, Hyperlink &h)
     h.setHistory(strcmp(history.value(), "1") == 0 || strcmp(history.value(), "true") == 0);
     auto r = h.AppendRun();
     this->handle_run(run_node, r);
-}
-
-
-void Distilator::handle_paragraph_properties(xml_node paragraph_node, Paragraph &p)
-{
-    xml_node pPr_node = paragraph_node.child(PARAGRAPH_PROPERTY);
-    if (pPr_node.empty()) {
-        cout<<"There is no paragraph property" << endl;
-        return;
-    }
-    this->set_paragraph_allignment(pPr_node, p);
-    xml_node pStyle_node = pPr_node.child(PARAGRAPH_STYLE);
-    if (pStyle_node != 0)
-    {
-        xml_attribute att = pStyle_node.attribute(VALUE);
-        if (att != 0 && strcmp(att.value(), LIST_PARAGRAPH) == 0)
-            this->handle_list(pPr_node);
-    }
-}
-
-void Distilator::set_paragraph_allignment(xml_node pPr_node, Paragraph &p)
-{
-    xml_node jc_node = pPr_node.child(JUSTIFICATION);
-    if (jc_node != 0)
-    {
-        xml_attribute att = jc_node.attribute(VALUE);
-        if (att != 0)
-        {
-            if (strcmp(att.value(), "start") == 0 || strcmp(att.value(), "left") == 0)
-                p.SetAlignment(Paragraph::Alignment::Left);
-            else if (strcmp(att.value(), "end") == 0 || strcmp(att.value(), "right") == 0)
-                p.SetAlignment(Paragraph::Alignment::Right);
-            else if (strcmp(att.value(), "center") == 0)
-                p.SetAlignment(Paragraph::Alignment::Centered);
-            else if (strcmp(att.value(), "both") == 0)
-                p.SetAlignment(Paragraph::Alignment::Justified);
-            else if (strcmp(att.value(), "distribute") == 0)
-                p.SetAlignment(Paragraph::Alignment::Distributed);
-            else {
-                cout << "Justification Error: File is Corrupted" << endl;
-            }
-        }
-    }
 }
 
 void Distilator::handle_drawing(xml_node drawing_node)
@@ -297,14 +393,11 @@ void Distilator::handle_object(xml_node object_node)
 void Distilator::handle_run(xml_node run_node, Run &r)
 {
     xml_node rpr = run_node.child(RUN_PROPERTY);
-    if (rpr) {
+    if (rpr)
         this->handle_run_properties(rpr, r);
-    }
     for (xml_node node = run_node.first_child(); node; node = node.next_sibling())
     {
-        cout << node.name() << endl;
         if (strcmp(node.name(), TEXT) == 0) {
-            cout << node.child_value() << endl;
             r.AppendText(node.child_value());
         }
         else if (strcmp(node.name(), DRAWING) == 0)
@@ -325,17 +418,28 @@ void Distilator::handle_run_properties(xml_node rpr, Run &r)
     for(auto child = rpr.first_child(); child; child=child.next_sibling())
     {
         auto name = child.name();
+        this->set_text_formmating(child, r);
         if (strcmp(name, SIZE) == 0) {
             this->set_size_run(child, r);
         }
-        this->set_text_formmating(child, r);
-        if (strcmp(name, RSTYLE) == 0){
-            this->set_run_style(child, r);
+        else if (strcmp(name, COMPLEX_SIZE) == 0) {
+            this->set_size_complex_run(child, r);
         }
-        if (strcmp(name, HIGHLIGHT) == 0) {
+        else if (strcmp(name, HIGHLIGHT) == 0) {
             this->set_highlight(child, r);
         }
+        else if (strcmp(name, COLOR) == 0) {
+            this->set_color(child, r);
+        }
+        else if (strcmp(name, FONT) == 0) {
+            this->set_font(child, r);
+        }
     }
+    auto rstyle = rpr.child(RSTYLE);
+    if (rstyle) {
+        this->set_run_style(rstyle, r);
+    }
+
 }
 
 //Sets the size of the run
@@ -356,6 +460,27 @@ void Distilator::set_size_run(xml_node sz, Run &r) {
         return;
     }
     r.SetFontSize((double)size/2.0);
+}
+
+//Sets the size of complex script run
+void Distilator::set_size_complex_run(xml_node szCs, Run &r)
+{
+    auto val = szCs.attribute(VALUE);
+    if (!val) {
+        cout<<"File is Corrupted! SizeRun" << endl;
+        return;
+    }
+    string ssize = val.value();
+    if (!is_int(ssize)) {
+        cout<<"File is Corrupted! size is not int" << endl;
+        return;
+    }
+    int size = stoi(ssize);
+    if (size <= 0) {
+        cout<<"File is Corrupted! size is le 0" << endl;
+        return;
+    }
+    r.SetFontSizeComplexScript((double)size/2.0);
 }
 
 //Sets the text formmating in run
@@ -406,7 +531,13 @@ void Distilator::set_run_style(xml_node rStyle, Run &r)
         cout<<"File is Corrupted! no val in rStyle" << endl;
         return;
     }
-    r.SetRunStyle(val.value());
+    auto style_node = this->get_style_node(val.value(), CHARACTER_STYLE_TYPE);
+    if (style_node == this->styles_root) {
+        cout<<"File is Corrupted! no style matching the " << val.value() << endl;
+        return;
+    }
+    auto style_rpr = style_node.child(RUN_PROPERTY);
+    this->handle_run_properties(style_rpr, r);
 }
 
 //Sets the highlight in run
@@ -418,6 +549,75 @@ void Distilator::set_highlight(xml_node highlight, Run &r)
         return;
     }
     r.SetHighlight(val.value());
+}
+
+//Sets the color in run
+void Distilator::set_color(xml_node color, Run &r)
+{
+    auto val = color.attribute(VALUE);
+    if (!val) {
+        cout<<"File is Corrupted! no val in color" << endl;
+        return;
+    }
+    string color_str = val.value();
+    if (color_str.size() < 6) {
+        cout<<"File is Corrupted! color is too short" << endl;
+        return;
+    }
+    while(color_str.size() > 6 && color_str[0] == '0')
+        color_str.erase(color_str.begin());
+    r.SetColor(color_str);
+}
+
+//Sets the font in run
+void Distilator::set_font(xml_node font, Run &r)
+{
+    auto ascii = font.attribute(FONT_ASCII);
+    auto east_asian = font.attribute(FONT_EAST_ASIAN);
+    auto hAnsi = font.attribute(FONT_HANSI);
+    auto cs = font.attribute(FONT_CS);
+    auto hint = font.attribute(FONT_HINT);
+    auto ascii_theme = font.attribute(FONT_ASCII_THEME);
+    auto east_asian_theme = font.attribute(FONT_EAST_ASIAN_THEME);
+    auto hAnsi_theme = font.attribute(FONT_HANSI_THEME);
+    auto cs_theme = font.attribute(FONT_CS_THEME);
+    string ascii_str = "";
+    string east_asian_str = "";
+    string hAnsi_str = "";
+    string cs_str = "";
+    string hint_str = "";
+    string ascii_theme_str = "";
+    string east_asian_theme_str = "";
+    string hAnsi_theme_str = "";
+    string cs_theme_str = "";
+    if (ascii) {
+        ascii_str = ascii.value();
+    }
+    if (east_asian) {
+        east_asian_str = east_asian.value();
+    }
+    if (hAnsi) {
+        hAnsi_str = hAnsi.value();
+    }
+    if (cs) {
+        cs_str = cs.value();
+    }
+    if (hint) {
+        hint_str = hint.value();
+    }
+    if (ascii_theme) {
+        ascii_theme_str = ascii_theme.value();
+    }
+    if (east_asian_theme) {
+        east_asian_theme_str = east_asian_theme.value();
+    }
+    if (hAnsi_theme) {
+        hAnsi_theme_str = hAnsi_theme.value();
+    }
+    if (cs_theme) {
+        cs_theme_str = cs_theme.value();
+    }
+    r.SetFont(ascii_str, east_asian_str, hAnsi_str, cs_str, hint_str, ascii_theme_str, east_asian_theme_str, hAnsi_theme_str, cs_theme_str);
 }
 
 // writes the paragraph to table_text
@@ -487,26 +687,6 @@ void Distilator::get_dimensions_table(xml_node t, int *rows, int *cols)
 }
 
 
-void Distilator::handle_paragraph(xml_node paragraph_node, Paragraph &p)
-{
-    this->handle_paragraph_properties(paragraph_node, p);
-    for (xml_node child = paragraph_node.first_child(); child; child = child.next_sibling())
-    {
-        if (strcmp(child.name(), RUN) == 0) {
-            auto r = p.AppendRun();
-            this->handle_run(child, r);
-        }
-        else if (strcmp(child.name(), HYPERLINK) == 0) {
-            auto h = p.AppendHyperlink();
-            this->handle_hyperlink(child, h);
-        }
-        else if (strcmp(child.name(), MATH_PARAGRAPH) == 0){
-            p.appendMath(child);
-        }
-    }
-}
-
-
 /*
     Docx Functions
 */
@@ -537,6 +717,18 @@ void Distilator::init_docx()
     }
     this->rels_root = this->rels.first_child();    
     cout<<"parsed relations.xml"<<endl;
+
+    /*
+        Open styles
+    */
+    auto styles_path = this->original_folder + "/word/styles.xml";
+    res = this->styles.load_file(styles_path.c_str());
+    if (!res) {
+        cout<<"Error parsing styles.xml"<<endl;
+        return;
+    }
+    this->styles_root = this->styles.first_child();
+    cout<<"parsed styles.xml"<<endl;
 
     /*
         New File Initialization
